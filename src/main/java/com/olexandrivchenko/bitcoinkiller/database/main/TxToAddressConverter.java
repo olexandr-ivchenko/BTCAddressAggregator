@@ -1,11 +1,10 @@
 package com.olexandrivchenko.bitcoinkiller.database.main;
 
 import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCaller;
-import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCallerImpl;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vin;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vout;
-import com.olexandrivchenko.bitcoinkiller.database.outbound.Address;
+import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,8 +14,11 @@ import java.util.List;
 @Component
 public class TxToAddressConverter {
 
-    @Autowired
-    private BitcoindCaller daemon;
+    private final BitcoindCaller daemon;
+
+    public TxToAddressConverter(BitcoindCaller daemon) {
+        this.daemon = daemon;
+    }
 
     public List<Address> convert(Tx tx) {
         List<Vin> vin = tx.getVin();
@@ -39,14 +41,10 @@ public class TxToAddressConverter {
     }
 
     private boolean isBlockReward(List<Vin> vin) {
-        if (vin.size() == 1
+        return vin.size() == 1
                 && vin.get(0).getCoinbase() != null
                 && vin.get(0).getTxid() == null
-                && vin.get(0).getScriptSig() == null) {
-            //this is mining block reward - no input, just coinbase
-            return true;
-        }
-        return false;
+                && vin.get(0).getScriptSig() == null;
     }
 
     private Address getAddress(Vout out, boolean isAdded) {
@@ -58,4 +56,5 @@ public class TxToAddressConverter {
         }
         return addr;
     }
+
 }

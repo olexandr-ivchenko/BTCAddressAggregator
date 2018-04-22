@@ -1,6 +1,6 @@
 package com.olexandrivchenko.bitcoinkiller.database.main;
 
-import com.olexandrivchenko.bitcoinkiller.database.outbound.Address;
+import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
 import org.junit.Test;
 
 import java.util.UUID;

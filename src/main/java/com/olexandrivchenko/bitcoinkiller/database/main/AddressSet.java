@@ -1,7 +1,6 @@
 package com.olexandrivchenko.bitcoinkiller.database.main;
 
-import com.olexandrivchenko.bitcoinkiller.database.outbound.Address;
-import org.springframework.stereotype.Component;
+import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
 
 import java.util.HashMap;
 import java.util.List;
