@@ -5,6 +5,8 @@ import com.olexandrivchenko.bitcoinkiller.database.main.AppExecutor;
 import com.olexandrivchenko.bitcoinkiller.database.main.HelpProvider;
 import com.olexandrivchenko.bitcoinkiller.database.main.ParametersParser;
 import com.olexandrivchenko.bitcoinkiller.database.main.dto.CommandLineOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -18,25 +20,23 @@ import java.util.function.Consumer;
 
 @SpringBootApplication
 public class BTCKillerDatabaseApp implements CommandLineRunner {
+    private final static Logger log = LoggerFactory.getLogger(BTCKillerDatabaseApp.class);
 
-    @Value("${testconfigvalue:unknown}")
-    String testVar;
-
-    @Autowired
-    ParametersParser paramParser;
-
-    @Autowired
-    HelpProvider helpProvider;
-
-    @Autowired
-    BitcoindCaller daemonImpl;
-
-    @Autowired
-    AppExecutor appExecutor;
+    private ParametersParser paramParser;
+    private HelpProvider helpProvider;
+    private BitcoindCaller daemonImpl;
+    private AppExecutor appExecutor;
 
     private Map<CommandLineOperation, Consumer> actionMap;
 
-    public static void main(String[] args) throws Exception {
+    public BTCKillerDatabaseApp(ParametersParser paramParser, HelpProvider helpProvider, BitcoindCaller daemonImpl, AppExecutor appExecutor) {
+        this.paramParser = paramParser;
+        this.helpProvider = helpProvider;
+        this.daemonImpl = daemonImpl;
+        this.appExecutor = appExecutor;
+    }
+
+    public static void main(String[] args){
 
         SpringApplication.run(BTCKillerDatabaseApp.class, args);
 
@@ -47,16 +47,16 @@ public class BTCKillerDatabaseApp implements CommandLineRunner {
         actionMap = new EnumMap<>(CommandLineOperation.class);
         actionMap.put(CommandLineOperation.HELP, o -> helpProvider.provideHelp());
         actionMap.put(CommandLineOperation.TEST, o -> {
-            daemonImpl.getBlockchainSize();
-            daemonImpl.getBlock(100000);
-            appExecutor.loadBlockChain();
+            long blockchainSize = daemonImpl.getBlockchainSize();
+            log.info("BlockChain size is: {}", blockchainSize);
+            appExecutor.startBlockChainIndexMaintain();
 
         });
 
     }
 
     @Override
-    public void run(String[] args) throws Exception {
+    public void run(String[] args){
         System.out.println("Started bitcoin-killer-database");
         CommandLineOperation operation = paramParser.getOperation(args);
         actionMap.get(operation).accept(operation);

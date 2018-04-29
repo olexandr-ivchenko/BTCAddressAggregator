@@ -19,6 +19,10 @@ public class DbUpdateLog {
     @Column
     private boolean processed;
 
+    public Long getId() {
+        return id;
+    }
+
     public Long getStartBlock() {
         return startBlock;
     }

@@ -5,14 +5,16 @@ import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.DbUpdateLog;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.repository.AddressRepository;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.repository.DbStateRepository;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.repository.DbUpdateLogRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * This is a class that should be used to work with database
@@ -32,8 +34,16 @@ public class OutputGate {
     }
 
     @NonNull
-    public DbUpdateLog getblockNumberToProcess(int size){
+    public synchronized DbUpdateLog getJobToProcess(int size){
+        DbUpdateLog unfinished =dbUpdateLogRepository.findFirstByProcessedFalseOrderByStartBlockAsc();
         DbUpdateLog lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
+        if(unfinished != null){
+            if(unfinished.getId().equals(lastLog.getId())){
+                dbUpdateLogRepository.delete(unfinished);
+            }else{
+                return unfinished;
+            }
+        }
         DbUpdateLog newJob = new DbUpdateLog();
         if(lastLog == null){
             newJob.setStartBlock(0L);
@@ -46,6 +56,16 @@ public class OutputGate {
         return newJob;
     }
 
+    public long getLastProcessedBlockNumber(){
+        DbUpdateLog unfinished =dbUpdateLogRepository.findFirstByProcessedFalseOrderByStartBlockAsc();
+        if(unfinished != null){
+            return unfinished.getStartBlock()-1;
+        }
+        DbUpdateLog lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
+        return ofNullable(lastLog).map(DbUpdateLog::getEndBlock).orElse(0L);
+    }
+
+    @Transactional
     public void runUpdate(Map<String, Address> addresses, DbUpdateLog job){
         List<Address> existing = loadExistingAddresses(addresses.values());
         mergeExistingIntoUpdate(addresses, existing);

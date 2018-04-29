@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Component
 public class TxToAddressConverter {
@@ -50,9 +51,15 @@ public class TxToAddressConverter {
     private Address getAddress(Vout out, boolean isAdded) {
         Address addr = new Address();
         addr.setAmount(isAdded ? out.getValue() : -out.getValue());
-        addr.setAddress(out.getScriptPubKey().getAddresses().get(0));
-        if (out.getScriptPubKey().getAddresses().size() > 1) {
-            throw new Error("review this!!!");
+        List<String> addresses = out.getScriptPubKey().getAddresses();
+        if(addresses!=null){
+            addr.setAddress(addresses.get(0));
+            if (addresses.size() > 1) {
+                throw new Error("review this!!!");
+            }
+        }else{
+            Random rand = new Random();
+            addr.setAddress("err" + rand.nextInt());
         }
         return addr;
     }

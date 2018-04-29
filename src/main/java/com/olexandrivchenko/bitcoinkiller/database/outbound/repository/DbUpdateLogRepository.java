@@ -9,4 +9,7 @@ import org.springframework.stereotype.Repository;
 public interface DbUpdateLogRepository extends JpaRepository<DbUpdateLog, Long>{
 
     DbUpdateLog findFirstByOrderByEndBlockDesc();
+
+    DbUpdateLog findFirstByProcessedFalseOrderByStartBlockAsc();
+
 }

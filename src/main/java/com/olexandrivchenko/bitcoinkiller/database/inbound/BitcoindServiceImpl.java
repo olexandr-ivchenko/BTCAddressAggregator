@@ -23,6 +23,15 @@ public class BitcoindServiceImpl {
     private String username = "user";
     private String password = "password";
 
+    public BitcoindServiceImpl() {
+    }
+
+    public BitcoindServiceImpl(String daemonUrl, String username, String password) {
+        this.daemonUrl = daemonUrl;
+        this.username = username;
+        this.password = password;
+    }
+
     public <T> GenericResponse<T> call(String operation, List<Object> params, ParameterizedTypeReference<GenericResponse<T>> type){
         RestTemplate template = new RestTemplate();
 
@@ -37,14 +46,11 @@ public class BitcoindServiceImpl {
                 new BasicAuthorizationInterceptor(username, password));
 
         HttpEntity<JsonRpcRequest> request = new HttpEntity<>(rq,requestHeaders);
-//        T foo = template.postForObject(daemonUrl, request, clazz);
 
-        GenericResponse<T> rs = template.exchange(daemonUrl,
+        return template.exchange(daemonUrl,
                 HttpMethod.POST,
                 request,
                 type).getBody();
-        return rs;
-
     }
 
 }
