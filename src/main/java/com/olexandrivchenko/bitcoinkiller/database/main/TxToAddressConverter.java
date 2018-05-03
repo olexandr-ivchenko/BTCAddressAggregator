@@ -5,7 +5,7 @@ import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vin;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vout;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ public class TxToAddressConverter {
 
     private final BitcoindCaller daemon;
 
-    public TxToAddressConverter(BitcoindCaller daemon) {
+    public TxToAddressConverter(@Qualifier("BitcoindCallerCache") BitcoindCaller daemon) {
         this.daemon = daemon;
     }
 
@@ -52,12 +52,14 @@ public class TxToAddressConverter {
         Address addr = new Address();
         addr.setAmount(isAdded ? out.getValue() : -out.getValue());
         List<String> addresses = out.getScriptPubKey().getAddresses();
-        if(addresses!=null){
+        if (addresses != null) {
             addr.setAddress(addresses.get(0));
             if (addresses.size() > 1) {
-                throw new Error("review this!!!");
+                Random rand = new Random();
+                addr.setAddress("err" + rand.nextInt());
+//                throw new Error("review this!!!");
             }
-        }else{
+        } else {
             Random rand = new Random();
             addr.setAddress("err" + rand.nextInt());
         }

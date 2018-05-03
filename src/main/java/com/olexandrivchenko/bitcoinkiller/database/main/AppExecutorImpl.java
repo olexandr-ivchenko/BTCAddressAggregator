@@ -8,6 +8,7 @@ import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.DbUpdateLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,13 +20,15 @@ import java.util.concurrent.TimeUnit;
 public class AppExecutorImpl implements AppExecutor, Runnable{
     private final static Logger log = LoggerFactory.getLogger(AppExecutorImpl.class);
 
-    private final static int BLOCKS_TO_PROCESS_IN_ONE_BATCH = 100;
+    private final static int BLOCKS_TO_PROCESS_IN_ONE_BATCH = 1000;
 
     private BitcoindCaller daemon;
     private BlockToAddressConverter blockConverter;
     private OutputGate out;
 
-    public AppExecutorImpl(BitcoindCaller daemon, BlockToAddressConverter blockConverter, OutputGate out) {
+    public AppExecutorImpl(@Qualifier("BitcoindCallerCache") BitcoindCaller daemon,
+                           BlockToAddressConverter blockConverter,
+                           OutputGate out) {
         this.daemon = daemon;
         this.blockConverter = blockConverter;
         this.out = out;
