@@ -1,31 +1,18 @@
-<config
-        xmlns='http://www.ehcache.org/v3'
-        xmlns:jsr107='http://www.ehcache.org/v3/jsr107'>
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://www.ehcache.org/ehcache.xsd"
+         updateCheck="false"
+         monitoring="off"
+         dynamicConfig="false"
+>
 
-    <service>
-        <jsr107:defaults default-template="heapCache" enable-management="false" enable-statistics="true">
-        </jsr107:defaults>
-    </service>
-
-    <cache alias="txCache" uses-template="heapCache">
-        <key-type copier="org.ehcache.impl.copy.IdentityCopier">java.lang.String</key-type>
-        <value-type copier="org.ehcache.impl.copy.IdentityCopier">com.olexandrivchenko.bitcoinkiller.database.inbound.cache.CachedTx</value-type>
-
+    <cache name="txCache"
+           maxBytesLocalHeap="512M"
+           overflowToDisk="false"
+           timeToLiveSeconds="0"
+           timeToIdleSeconds="0"
+           memoryStoreEvictionPolicy="FIFO">
+        <sizeOfPolicy maxDepth="1000" maxDepthExceededBehavior="abort"/>
     </cache>
 
-    <cache-template name="heapCache">
-        <listeners>
-            <listener>
-                <class>com.olexandrivchenko.bitcoinkiller.database.inbound.cache.CacheEventLogger</class>
-                <event-firing-mode>ASYNCHRONOUS</event-firing-mode>
-                <event-ordering-mode>UNORDERED</event-ordering-mode>
-                <events-to-fire-on>EXPIRED</events-to-fire-on>
-                <!--<events-to-fire-on>REMOVED</events-to-fire-on>-->
-                <events-to-fire-on>EVICTED</events-to-fire-on>
-            </listener>
-        </listeners>
-        <resources>
-            <heap>100000</heap>
-        </resources>
-    </cache-template>
-</config>
+</ehcache>

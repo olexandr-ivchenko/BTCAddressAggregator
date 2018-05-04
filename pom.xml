@@ -82,16 +82,11 @@
             <version>1.4.194</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.ehcache/ehcache -->
+        <!-- https://mvnrepository.com/artifact/net.sf.ehcache/ehcache -->
         <dependency>
-            <groupId>org.ehcache</groupId>
+            <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache</artifactId>
-            <version>3.5.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.cache</groupId>
-            <artifactId>cache-api</artifactId>
+            <version>2.10.5</version>
         </dependency>
 
         <dependency>
