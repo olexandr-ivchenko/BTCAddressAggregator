@@ -22,12 +22,13 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     private final static Logger log = LoggerFactory.getLogger(BitcoindCallerCacheImpl.class);
 
     private BitcoindCaller baseImplementation;
-    private Cache<String, Tx> txCache;
+    private Cache<String, CachedTx> txCache;
 
     private boolean enableCache = true;
 
     private long entriesAdded = 0;
-    private long entriesReadAndDeleted = 0;
+    private long entriesRead = 0;
+    private long entriesDeleted = 0;
     private long transactionsLoaded = 0;
 
     public BitcoindCallerCacheImpl(@Qualifier("BitcoindCaller") BitcoindCaller baseImplementation) throws URISyntaxException {
@@ -37,6 +38,7 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
                 getClass().getResource("/ehcache.xml").toURI(),
                 getClass().getClassLoader());
         txCache = cacheManager.getCache("txCache");
+
     }
 
     @Override
@@ -49,7 +51,7 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
         GenericResponse<Block> block = baseImplementation.getBlock(number);
         if (enableCache) {
             for (Tx tx : block.getResult().getTx()) {
-                txCache.put(tx.getTxid(), tx);
+                txCache.put(tx.getTxid(), new CachedTx(tx));
             }
             entriesAdded += block.getResult().getTx().size();
             log.debug("Saving block {} transaction. Total {} transaction", number, block.getResult().getTx().size());
@@ -60,12 +62,18 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     @Override
     public Tx loadTransaction(String txid) {
         if (enableCache) {
-            Tx tx = txCache.get(txid);
+            CachedTx tx = txCache.get(txid);
             if (tx != null) {
                 log.debug("Returning transaction from cache {}", txid);
-                txCache.remove(txid);
-                entriesReadAndDeleted++;
-                return tx;
+                entriesRead++;
+                tx.notifyRead();
+                if(tx.getReadCount() >= tx.getOutCount()) {
+                    txCache.remove(txid);
+                    entriesDeleted++;
+                }else{
+                    txCache.put(txid, tx);
+                }
+                return tx.getTx();
             }
         }
         transactionsLoaded++;
@@ -74,7 +82,7 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     @Scheduled(fixedDelay = 60000)
     public void outputStats() {
-        log.info("Added {} transactions, returned from cache {}, loaded {}", entriesAdded, entriesReadAndDeleted, transactionsLoaded);
+        log.info("Added {} transactions, returned from cache {}, and then removed {}, loaded {}", entriesAdded, entriesRead, entriesDeleted, transactionsLoaded);
     }
 
 }

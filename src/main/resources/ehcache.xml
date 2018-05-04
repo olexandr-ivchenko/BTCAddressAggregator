@@ -9,7 +9,8 @@
 
     <cache alias="txCache" uses-template="heapCache">
         <key-type copier="org.ehcache.impl.copy.IdentityCopier">java.lang.String</key-type>
-        <value-type copier="org.ehcache.impl.copy.IdentityCopier">com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx</value-type>
+        <value-type copier="org.ehcache.impl.copy.IdentityCopier">com.olexandrivchenko.bitcoinkiller.database.inbound.cache.CachedTx</value-type>
+
     </cache>
 
     <cache-template name="heapCache">
@@ -18,10 +19,8 @@
                 <class>com.olexandrivchenko.bitcoinkiller.database.inbound.cache.CacheEventLogger</class>
                 <event-firing-mode>ASYNCHRONOUS</event-firing-mode>
                 <event-ordering-mode>UNORDERED</event-ordering-mode>
-                <events-to-fire-on>CREATED</events-to-fire-on>
-                <events-to-fire-on>UPDATED</events-to-fire-on>
                 <events-to-fire-on>EXPIRED</events-to-fire-on>
-                <events-to-fire-on>REMOVED</events-to-fire-on>
+                <!--<events-to-fire-on>REMOVED</events-to-fire-on>-->
                 <events-to-fire-on>EVICTED</events-to-fire-on>
             </listener>
         </listeners>
