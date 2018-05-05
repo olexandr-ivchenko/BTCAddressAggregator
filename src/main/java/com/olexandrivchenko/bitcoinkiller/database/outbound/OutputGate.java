@@ -28,22 +28,26 @@ public class OutputGate {
     private final DbStateRepository dbState;
     private final DbUpdateLogRepository dbUpdateLogRepository;
 
-    public OutputGate(AddressRepository addressRepo, DbStateRepository dbState, DbUpdateLogRepository dbUpdateLogRepository) {
+    public OutputGate(AddressRepository addressRepo,
+                      DbStateRepository dbState,
+                      DbUpdateLogRepository dbUpdateLogRepository) {
         this.addressRepo = addressRepo;
         this.dbState = dbState;
         this.dbUpdateLogRepository = dbUpdateLogRepository;
     }
 
     @NonNull
-    public synchronized DbUpdateLog getJobToProcess(int size) {
-        DbUpdateLog unfinished = dbUpdateLogRepository.findFirstByProcessedFalseOrderByStartBlockAsc();
+    public synchronized DbUpdateLog getJobToProcess(int size, boolean skipUnfinished) {
         DbUpdateLog lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
-        if (unfinished != null) {
-            if (unfinished.getId().equals(lastLog.getId())) {
-                dbUpdateLogRepository.delete(unfinished);
-                lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
-            } else {
-                return unfinished;
+        if(skipUnfinished) {
+            DbUpdateLog unfinished = dbUpdateLogRepository.findFirstByProcessedFalseOrderByStartBlockAsc();
+            if (unfinished != null) {
+                if (unfinished.getId().equals(lastLog.getId())) {
+                    dbUpdateLogRepository.delete(unfinished);
+                    lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
+                } else {
+                    return unfinished;
+                }
             }
         }
         DbUpdateLog newJob = new DbUpdateLog();
@@ -68,7 +72,7 @@ public class OutputGate {
     }
 
     @Transactional
-    public void runUpdate(Map<String, Address> addresses, DbUpdateLog job) {
+    protected void runUpdate(Map<String, Address> addresses, DbUpdateLog job) {
         List<Address> existing = loadExistingAddresses(ofNullable(addresses).map(Map::values).orElse(null));
         mergeExistingIntoUpdate(addresses, existing);
         job.setProcessed(true);

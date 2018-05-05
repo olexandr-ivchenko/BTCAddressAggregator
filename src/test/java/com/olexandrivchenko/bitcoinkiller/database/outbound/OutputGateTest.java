@@ -24,7 +24,7 @@ public class OutputGateTest {
 
     @Test
     public void testGetFirstJobToProcess(){
-        DbUpdateLog jobToProcess = out.getJobToProcess(100);
+        DbUpdateLog jobToProcess = out.getJobToProcess(100, true);
         assertEquals(Long.valueOf(0L), jobToProcess.getStartBlock());
         assertEquals(Long.valueOf(99L), jobToProcess.getEndBlock());
         DbUpdateLog dbUpdateLog = entityManager.find(DbUpdateLog.class, jobToProcess.getId());
@@ -33,7 +33,7 @@ public class OutputGateTest {
 
     @Test
     public void testJobSaving(){
-        DbUpdateLog jobToProcess = out.getJobToProcess(100);
+        DbUpdateLog jobToProcess = out.getJobToProcess(100, true);
         jobToProcess.setProcessed(true);
         out.runUpdate(null, jobToProcess);
         DbUpdateLog dbUpdateLog = entityManager.find(DbUpdateLog.class, jobToProcess.getId());
@@ -46,9 +46,9 @@ public class OutputGateTest {
      */
     @Test
     public void testSkipLastUnfinishedJob(){
-        DbUpdateLog jobToProcess = out.getJobToProcess(100);
+        DbUpdateLog jobToProcess = out.getJobToProcess(100, true);
         assertEquals(Long.valueOf(0), jobToProcess.getStartBlock());
-        jobToProcess = out.getJobToProcess(100);
+        jobToProcess = out.getJobToProcess(100, true);
         assertEquals(Long.valueOf(0), jobToProcess.getStartBlock());
     }
 }

@@ -3,6 +3,7 @@ package com.olexandrivchenko.bitcoinkiller.database.main;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCaller;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.GenericResponse;
+import com.olexandrivchenko.bitcoinkiller.database.outbound.AsyncOutputGateWrapper;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.OutputGate;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.DbUpdateLog;
@@ -25,13 +26,16 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
     private BitcoindCaller daemon;
     private BlockToAddressConverter blockConverter;
     private OutputGate out;
+    private AsyncOutputGateWrapper asyncOut;
 
     public AppExecutorImpl(@Qualifier("BitcoindCallerCache") BitcoindCaller daemon,
                            BlockToAddressConverter blockConverter,
-                           OutputGate out) {
+                           OutputGate out,
+                           AsyncOutputGateWrapper asyncOut) {
         this.daemon = daemon;
         this.blockConverter = blockConverter;
         this.out = out;
+        this.asyncOut = asyncOut;
     }
 
     @Override
@@ -53,7 +57,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
                 return;
             }
             //get next job to process
-            DbUpdateLog job = out.getJobToProcess(Math.min(BLOCKS_TO_PROCESS_IN_ONE_BATCH, (int)(blockchainSize-processedBlocks)));
+            DbUpdateLog job = asyncOut.getJobToProcess(Math.min(BLOCKS_TO_PROCESS_IN_ONE_BATCH, (int)(blockchainSize-processedBlocks)));
             log.info("Going to process blocks {}-{}", job.getStartBlock(), job.getEndBlock());
             AddressSet addressSet = new AddressSet();
             for (Long i = job.getStartBlock(); i <= job.getEndBlock(); i++) {
@@ -67,10 +71,13 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
             double blocksSum = addressSet.getAddresses().values().stream().map(Address::getAmount).mapToDouble(Double::doubleValue).sum();
 
             job.setProcessed(true);
-            log.info("Going to save {} addresses", addressSet.getAddresses().size());
             //save results to DB
-            out.runUpdate(addressSet.getAddresses(), job);
-            log.info("Done blocks {}-{} in {} seconds", job.getStartBlock(), job.getEndBlock(), (System.currentTimeMillis()-startTime)/1000);
+            asyncOut.postUpdateJob(addressSet.getAddresses(), job);
+            log.info("Done blocks {}-{} with address count={} in {} seconds",
+                    job.getStartBlock(),
+                    job.getEndBlock(),
+                    addressSet.getAddresses().size(),
+                    (System.currentTimeMillis()-startTime)/1000);
         }
     }
 
