@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class AppExecutorImpl implements AppExecutor, Runnable{
     private final static Logger log = LoggerFactory.getLogger(AppExecutorImpl.class);
 
-    private final static int BLOCKS_TO_PROCESS_IN_ONE_BATCH = 100;
+    private final static int BLOCKS_TO_PROCESS_IN_ONE_BATCH = 1000;
 
     private BitcoindCaller daemon;
     private BlockToAddressConverter blockConverter;

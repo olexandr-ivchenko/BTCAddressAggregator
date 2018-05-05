@@ -10,14 +10,15 @@ import org.springframework.stereotype.Service;
 
 import java.util.AbstractMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class AsyncOutputGateWrapper {
     private final static Logger log = LoggerFactory.getLogger(AsyncOutputGateWrapper.class);
 
-    private Queue<Map.Entry<DbUpdateLog, Map<String, Address>>> updateQueue = new ArrayBlockingQueue<>(5);
+    private BlockingQueue<Map.Entry<DbUpdateLog, Map<String, Address>>> updateQueue = new ArrayBlockingQueue<>(5);
     private OutputGate outputGate;
 
     public AsyncOutputGateWrapper(OutputGate outputGate) {
@@ -33,20 +34,41 @@ public class AsyncOutputGateWrapper {
     }
 
     public void postUpdateJob(Map<String, Address> addresses, DbUpdateLog job) {
-        updateQueue.add(new AbstractMap.SimpleEntry<>(job, addresses));
+        boolean result = false;
+        do {
+            try {
+                long start = System.currentTimeMillis();
+                result = updateQueue.offer(new AbstractMap.SimpleEntry<>(job, addresses), 10, TimeUnit.SECONDS);
+                long end = System.currentTimeMillis();
+                if(end - start > 1000){
+                    log.info("Adding job {}-{} with result [{}] to queue had to wait for {}ms",
+                            job.getStartBlock(),
+                            job.getEndBlock(),
+                            result,
+                            end-start);
+                }
+            } catch (InterruptedException e) {
+                log.error("Strange exception, while waiting to add job to queue");
+            }
+        }while(!result);
     }
 
     @Scheduled(fixedDelay = 1000)
-    public void runAsyncUpdate() {
-        Map.Entry<DbUpdateLog, Map<String, Address>> job;
-        while ((job = updateQueue.poll()) != null) {
-            long start = System.currentTimeMillis();
-            outputGate.runUpdate(job.getValue(), job.getKey());
-            log.info("Updated database with job {}-{} address count={} in {} ms",
-                    job.getKey().getStartBlock(),
-                    job.getKey().getEndBlock(),
-                    job.getValue().size(),
-                    System.currentTimeMillis() - start);
+    public synchronized void runAsyncUpdate() {
+        try {
+            Map.Entry<DbUpdateLog, Map<String, Address>> job;
+            while ((job = updateQueue.poll()) != null) {
+                long start = System.currentTimeMillis();
+                outputGate.runUpdate(job.getValue(), job.getKey());
+                log.info("Updated database with job {}-{} address count={} in {} ms",
+                        job.getKey().getStartBlock(),
+                        job.getKey().getEndBlock(),
+                        job.getValue().size(),
+                        System.currentTimeMillis() - start);
+            }
+        }catch (Throwable e){
+            log.error("Fatal exception in database update thread", e);
+            System.exit(1);
         }
     }
 

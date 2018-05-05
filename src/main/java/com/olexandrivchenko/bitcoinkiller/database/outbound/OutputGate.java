@@ -72,7 +72,7 @@ public class OutputGate {
     }
 
     @Transactional
-    protected void runUpdate(Map<String, Address> addresses, DbUpdateLog job) {
+    public void runUpdate(Map<String, Address> addresses, DbUpdateLog job) {
         List<Address> existing = loadExistingAddresses(ofNullable(addresses).map(Map::values).orElse(null));
         mergeExistingIntoUpdate(addresses, existing);
         job.setProcessed(true);
