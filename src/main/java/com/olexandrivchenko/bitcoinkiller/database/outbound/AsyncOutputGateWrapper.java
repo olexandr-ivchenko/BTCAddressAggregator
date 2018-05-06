@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class AsyncOutputGateWrapper {
     private final static Logger log = LoggerFactory.getLogger(AsyncOutputGateWrapper.class);
 
-    private BlockingQueue<Map.Entry<DbUpdateLog, Map<String, Address>>> updateQueue = new ArrayBlockingQueue<>(5);
+    private BlockingQueue<Map.Entry<DbUpdateLog, Map<String, Address>>> updateQueue = new ArrayBlockingQueue<>(2);
     private OutputGate outputGate;
 
     public AsyncOutputGateWrapper(OutputGate outputGate) {

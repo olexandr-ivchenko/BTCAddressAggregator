@@ -78,14 +78,13 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     @Scheduled(fixedDelay = 60000)
     public void outputStats() {
-        log.info(" loaded {}",
-                transactionsLoaded);
         StatisticsGateway stat = txCache.getStatistics();
-        log.info("\nEhcache stats: added={}, removed={}, evicted={}, heapSize={}kb, hitCount={}, missCount={}, hitRatio={}",
+        log.info("\nEhcache stats: added={}, removed={}, evicted={}, heapSize={}kb, elementCount={}, hitCount={}, missCount={}, hitRatio={}",
                 stat.cachePutAddedCount(),
                 stat.cacheRemoveCount(),
                 stat.cacheEvictedCount(),
                 stat.getLocalHeapSizeInBytes()/1024,
+                txCache.getSize(),
                 stat.cacheHitCount(),
                 stat.cacheMissCount(),
                 stat.cacheHitRatio());

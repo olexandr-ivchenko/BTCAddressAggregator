@@ -10,7 +10,7 @@ public class AddressSet {
 
     private Map<String, Address> addresses = new HashMap<>();
 
-    public void add(Address addr){
+    private void add(Address addr){
         Address storedAddr = addresses.get(addr.getAddress());
         if(storedAddr != null){
             storedAddr.setAmount(storedAddr.getAmount()+addr.getAmount());
@@ -24,11 +24,17 @@ public class AddressSet {
         for(Address addr : addresses){
             add(addr);
         }
+        removeZeroBalances(this.addresses);
     }
 
     public Map<String, Address> getAddresses(){
         return addresses;
     }
 
+    private void removeZeroBalances(Map<String, Address> addresses) {
+        addresses
+                .entrySet()
+                .removeIf(entry -> entry.getValue().getAmount() < 0.00000001 && entry.getValue().getAmount() > -0.00000001);
+    }
 
 }

@@ -5,6 +5,8 @@ import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.DbUpdateLog;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.repository.AddressRepository;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.repository.DbStateRepository;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.repository.DbUpdateLogRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,8 @@ import static java.util.Optional.ofNullable;
 @Service
 public class OutputGate {
 
+    private final static Logger log = LoggerFactory.getLogger(OutputGate.class);
+
     private final AddressRepository addressRepo;
     private final DbStateRepository dbState;
     private final DbUpdateLogRepository dbUpdateLogRepository;
@@ -39,7 +43,7 @@ public class OutputGate {
     @NonNull
     public synchronized DbUpdateLog getJobToProcess(int size, boolean skipUnfinished) {
         DbUpdateLog lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
-        if(skipUnfinished) {
+        if (skipUnfinished) {
             DbUpdateLog unfinished = dbUpdateLogRepository.findFirstByProcessedFalseOrderByStartBlockAsc();
             if (unfinished != null) {
                 if (unfinished.getId().equals(lastLog.getId())) {
@@ -76,11 +80,13 @@ public class OutputGate {
         List<Address> existing = loadExistingAddresses(ofNullable(addresses).map(Map::values).orElse(null));
         mergeExistingIntoUpdate(addresses, existing);
         job.setProcessed(true);
-        if(addresses != null && !addresses.isEmpty()){
+        if (addresses != null && !addresses.isEmpty()) {
             addressRepo.save(addresses.values());
 //            addressRepo.flush();
         }
         dbUpdateLogRepository.save(job);
+        int deleted = addressRepo.wipeZeroBalance();
+        log.info("Deleted {} zero addresses", deleted);
     }
 
     private void mergeExistingIntoUpdate(Map<String, Address> addresses, List<Address> existing) {
