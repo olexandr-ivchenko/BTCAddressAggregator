@@ -27,7 +27,7 @@ public class AsyncOutputGateWrapper {
 
     @NonNull
     public synchronized DbUpdateLog getJobToProcess(int size) {
-        if(updateQueue.isEmpty()){
+        if (updateQueue.isEmpty()) {
             return outputGate.getJobToProcess(size, true);
         }
         return outputGate.getJobToProcess(size, false);
@@ -40,17 +40,17 @@ public class AsyncOutputGateWrapper {
                 long start = System.currentTimeMillis();
                 result = updateQueue.offer(new AbstractMap.SimpleEntry<>(job, addresses), 10, TimeUnit.SECONDS);
                 long end = System.currentTimeMillis();
-                if(end - start > 1000){
+                if (end - start > 1000) {
                     log.info("Adding job {}-{} with result [{}] to queue had to wait for {}ms",
                             job.getStartBlock(),
                             job.getEndBlock(),
                             result,
-                            end-start);
+                            end - start);
                 }
             } catch (InterruptedException e) {
                 log.error("Strange exception, while waiting to add job to queue");
             }
-        }while(!result);
+        } while (!result);
     }
 
     @Scheduled(fixedDelay = 1000)
@@ -59,6 +59,10 @@ public class AsyncOutputGateWrapper {
             Map.Entry<DbUpdateLog, Map<String, Address>> job;
             while ((job = updateQueue.poll()) != null) {
                 long start = System.currentTimeMillis();
+                log.info("Database job {}-{} submited with {} addresses",
+                        job.getKey().getStartBlock(),
+                        job.getKey().getEndBlock(),
+                        job.getValue().size());
                 outputGate.runUpdate(job.getValue(), job.getKey());
                 log.info("Updated database with job {}-{} address count={} in {} ms",
                         job.getKey().getStartBlock(),
@@ -66,7 +70,7 @@ public class AsyncOutputGateWrapper {
                         job.getValue().size(),
                         System.currentTimeMillis() - start);
             }
-        }catch (Throwable e){
+        } catch (Throwable e) {
             log.error("Fatal exception in database update thread", e);
             System.exit(1);
         }

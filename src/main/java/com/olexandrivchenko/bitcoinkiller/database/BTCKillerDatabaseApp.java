@@ -40,14 +40,12 @@ public class BTCKillerDatabaseApp implements CommandLineRunner {
         this.appExecutor = appExecutor;
     }
 
-    public static void main(String[] args){
-
+    public static void main(String[] args) {
         SpringApplication.run(BTCKillerDatabaseApp.class, args);
-
     }
 
     @PostConstruct
-    public void init(){
+    public void init() {
         actionMap = new EnumMap<>(CommandLineOperation.class);
         actionMap.put(CommandLineOperation.HELP, o -> helpProvider.provideHelp());
         actionMap.put(CommandLineOperation.TEST, o -> {
@@ -60,7 +58,7 @@ public class BTCKillerDatabaseApp implements CommandLineRunner {
     }
 
     @Override
-    public void run(String[] args){
+    public void run(String[] args) {
         System.out.println("Started bitcoin-killer-database");
         CommandLineOperation operation = paramParser.getOperation(args);
         actionMap.get(operation).accept(operation);

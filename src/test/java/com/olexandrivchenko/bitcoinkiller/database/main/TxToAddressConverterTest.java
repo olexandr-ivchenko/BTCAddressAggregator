@@ -3,6 +3,8 @@ package com.olexandrivchenko.bitcoinkiller.database.main;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCallerImpl;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindServiceImpl;
+import com.olexandrivchenko.bitcoinkiller.database.inbound.cache.BitcoindCallerCacheImpl;
+import com.olexandrivchenko.bitcoinkiller.database.inbound.cache.LoggingCacheListener;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
 import org.apache.commons.io.IOUtils;
@@ -18,7 +20,8 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {BitcoindServiceImpl.class, BitcoindCallerImpl.class, TxToAddressConverter.class})
+@ContextConfiguration(classes = {BitcoindServiceImpl.class, BitcoindCallerCacheImpl.class, BitcoindCallerImpl.class,
+        TxToAddressConverter.class, LoggingCacheListener.class})
 public class TxToAddressConverterTest {
 
     @Autowired

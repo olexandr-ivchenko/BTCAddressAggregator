@@ -76,7 +76,10 @@ public class OutputGate {
         List<Address> existing = loadExistingAddresses(ofNullable(addresses).map(Map::values).orElse(null));
         mergeExistingIntoUpdate(addresses, existing);
         job.setProcessed(true);
-        ofNullable(addresses).ifPresent(o -> addressRepo.save(o.values()));
+        if(addresses != null && !addresses.isEmpty()){
+            addressRepo.save(addresses.values());
+//            addressRepo.flush();
+        }
         dbUpdateLogRepository.save(job);
     }
 

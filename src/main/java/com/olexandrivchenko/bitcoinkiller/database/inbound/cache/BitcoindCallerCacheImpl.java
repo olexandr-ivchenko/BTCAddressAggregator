@@ -7,6 +7,7 @@ import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
+import net.sf.ehcache.statistics.StatisticsGateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,9 +27,6 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     private boolean enableCache = true;
 
-    private long entriesAdded = 0;
-    private long entriesRead = 0;
-    private long entriesDeleted = 0;
     private long transactionsLoaded = 0;
 
     public BitcoindCallerCacheImpl(@Qualifier("BitcoindCaller") BitcoindCaller baseImplementation,
@@ -53,7 +51,6 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
             for (Tx tx : block.getResult().getTx()) {
                 txCache.put(new Element(tx.getTxid(), new CachedTx(tx)));
             }
-            entriesAdded += block.getResult().getTx().size();
             log.debug("Saving block {} transaction. Total {} transaction", number, block.getResult().getTx().size());
         }
         return block;
@@ -66,11 +63,9 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
             if (txObj != null) {
                 CachedTx tx = (CachedTx) txObj;
                 log.debug("Returning transaction from cache {}", txid);
-                entriesRead++;
                 tx.notifyRead();
                 if (tx.getReadCount() >= tx.getOutCount()) {
                     txCache.remove(txid);
-                    entriesDeleted++;
                 } else {
                     txCache.put(new Element(txid, tx));
                 }
@@ -83,8 +78,18 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     @Scheduled(fixedDelay = 60000)
     public void outputStats() {
-        log.info("Added {} transactions, returned from cache {}, and then removed {}, loaded {}, evicted {}",
-                entriesAdded, entriesRead, entriesDeleted, transactionsLoaded, cacheLogger.getEvictedCount());
+        log.info(" loaded {}",
+                transactionsLoaded);
+        StatisticsGateway stat = txCache.getStatistics();
+        log.info("\nEhcache stats: added={}, removed={}, evicted={}, heapSize={}kb, hitCount={}, missCount={}, hitRatio={}",
+                stat.cachePutAddedCount(),
+                stat.cacheRemoveCount(),
+                stat.cacheEvictedCount(),
+                stat.getLocalHeapSizeInBytes()/1024,
+                stat.cacheHitCount(),
+                stat.cacheMissCount(),
+                stat.cacheHitRatio());
+
     }
 
 }

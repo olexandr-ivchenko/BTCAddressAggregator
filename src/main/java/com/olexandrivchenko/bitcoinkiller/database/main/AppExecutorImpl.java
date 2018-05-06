@@ -40,6 +40,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
 
     @Override
     public void startBlockChainIndexMaintain(){
+        log.info("startBlockChainIndexMaintain");
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleWithFixedDelay(this, 0, 1, TimeUnit.MINUTES);
 
