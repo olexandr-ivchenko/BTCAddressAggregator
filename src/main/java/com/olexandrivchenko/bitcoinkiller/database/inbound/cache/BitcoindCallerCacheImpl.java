@@ -14,8 +14,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import static java.util.Optional.ofNullable;
-
 @Service("BitcoindCallerCache")
 public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
@@ -59,8 +57,9 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     @Override
     public Tx loadTransaction(String txid) {
         if (enableCache) {
-            Object txObj = ofNullable(txCache.get(txid)).map(Element::getObjectValue).orElse(null);
-            if (txObj != null) {
+            Element cacheElement = txCache.get(txid);
+            if (cacheElement != null) {
+                Object txObj = cacheElement.getObjectValue();
                 CachedTx tx = (CachedTx) txObj;
                 log.debug("Returning transaction from cache {}", txid);
                 tx.notifyRead();
@@ -88,6 +87,12 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
                 stat.cacheHitCount(),
                 stat.cacheMissCount(),
                 stat.cacheHitRatio());
+//        for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
+//            if (mpBean.getType() == MemoryType.HEAP) {
+//                log.debug("Name: {}: {}", mpBean.getName(), mpBean.getUsage()
+//                );
+//            }
+//        }
 
     }
 

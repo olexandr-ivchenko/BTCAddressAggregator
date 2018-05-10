@@ -40,6 +40,48 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
 
     @Override
     public void startBlockChainIndexMaintain(){
+        //temporary warm up booster
+//        log.info("Goin to warm up cache");
+//        long processedBlocks = out.getLastProcessedBlockNumber();
+//        for(int i=23000;i>-100001;i--){
+//            daemon.getBlock(processedBlocks-i);
+//        }
+
+//        Random rand = new Random();
+//        List<Address> duplicates = new ArrayList<>();
+//        long start = 0;
+//        while(true){
+//            start = System.currentTimeMillis();
+//            AddressSet set = new AddressSet();
+//            duplicates = new ArrayList<>();
+//            for(int i=0; i<100; i++){
+//                List<Address> l = new ArrayList<>();
+//                for(int j=0; j< 2000; j++) {
+//                    Address a = new Address();
+//                    a.setAmount(rand.nextInt()%2==0?0:Math.abs(rand.nextDouble()%100));
+////                    a.setAmount(rand.nextInt());
+//                    a.setAddress(UUID.randomUUID().toString().substring(0, 31));
+//                    a.setLastSeenBlock(1000000L);
+//                    a.setCreationBlock(1000000L);
+//                    l.add(a);
+//                    if(rand.nextInt()%2 == 0){
+//                        Address dup = new Address();
+//                        dup.setCreationBlock(1000000L);
+//                        dup.setLastSeenBlock(1000000L);
+//                        dup.setAddress(a.getAddress());
+//                        dup.setAmount(-a.getAmount() + Math.abs(rand.nextInt()%2));
+//                        duplicates.add(dup);
+//                    }
+//                }
+//                set.addAll(l);
+//            }
+//            DbUpdateLog dbUpdateLog = new DbUpdateLog();
+//            dbUpdateLog.setProcessed(false);
+//            dbUpdateLog.setStartBlock(1000000L);
+//            dbUpdateLog.setEndBlock(1000001L);
+//            asyncOut.postUpdateJob(set.getAddresses(), dbUpdateLog);
+//        }
+
         log.info("startBlockChainIndexMaintain");
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleWithFixedDelay(this, 0, 1, TimeUnit.MINUTES);
@@ -59,6 +101,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
             }
             //get next job to process
             DbUpdateLog job = asyncOut.getJobToProcess(Math.min(BLOCKS_TO_PROCESS_IN_ONE_BATCH, (int)(blockchainSize-processedBlocks)));
+
             log.info("Going to process blocks {}-{}", job.getStartBlock(), job.getEndBlock());
             AddressSet addressSet = new AddressSet();
             for (Long i = job.getStartBlock(); i <= job.getEndBlock(); i++) {
@@ -69,7 +112,6 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
                 List<Address> blockAddressChanges = blockConverter.convert(block.getResult());
                 addressSet.addAll(blockAddressChanges);
             }
-            double blocksSum = addressSet.getAddresses().values().stream().map(Address::getAmount).mapToDouble(Double::doubleValue).sum();
 
             job.setProcessed(true);
             //save results to DB

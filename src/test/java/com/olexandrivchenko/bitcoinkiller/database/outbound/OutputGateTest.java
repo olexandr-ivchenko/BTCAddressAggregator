@@ -9,6 +9,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.HashMap;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
@@ -35,7 +37,7 @@ public class OutputGateTest {
     public void testJobSaving(){
         DbUpdateLog jobToProcess = out.getJobToProcess(100, true);
         jobToProcess.setProcessed(true);
-        out.runUpdate(null, jobToProcess);
+        out.runUpdate(new HashMap<>(), jobToProcess);
         DbUpdateLog dbUpdateLog = entityManager.find(DbUpdateLog.class, jobToProcess.getId());
         assertEquals(true, dbUpdateLog.isProcessed());
     }

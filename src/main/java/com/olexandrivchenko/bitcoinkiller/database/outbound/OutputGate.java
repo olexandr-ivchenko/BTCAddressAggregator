@@ -11,13 +11,9 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import static java.util.Optional.ofNullable;
 
 /**
  * This is a class that should be used to work with database
@@ -72,16 +68,16 @@ public class OutputGate {
             return unfinished.getStartBlock() - 1;
         }
         DbUpdateLog lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
-        return ofNullable(lastLog).map(DbUpdateLog::getEndBlock).orElse(0L);
+        return lastLog == null ? 0 : lastLog.getEndBlock();
     }
 
     @Transactional
-    public void runUpdate(Map<String, Address> addresses, DbUpdateLog job) {
-        List<Address> existing = loadExistingAddresses(ofNullable(addresses).map(Map::values).orElse(null));
-        mergeExistingIntoUpdate(addresses, existing);
+    public void runUpdate(@NonNull Map<String, Address> addressesMap, DbUpdateLog job) {
+        List<Address> existing = loadExistingAddresses(addressesMap);
+        mergeExistingIntoUpdate(addressesMap, existing);
         job.setProcessed(true);
-        if (addresses != null && !addresses.isEmpty()) {
-            addressRepo.save(addresses.values());
+        if (!addressesMap.isEmpty()) {
+            addressRepo.save(addressesMap.values());
 //            addressRepo.flush();
         }
         dbUpdateLogRepository.save(job);
@@ -98,13 +94,17 @@ public class OutputGate {
         }
     }
 
-    private List<Address> loadExistingAddresses(Collection<Address> addresses) {
-        return addressRepo.getExistingAddresses(
-                ofNullable(addresses).orElse(Collections.emptyList())
-                        .stream()
-                        .map(Address::getAddress)
-                        .collect(Collectors.toSet()));
-
+    private List<Address> loadExistingAddresses(@NonNull Map<String, Address> addresses) {
+        List<Address> existingAddresses = new ArrayList<>();
+        List<String> addr = new ArrayList<>(addresses.keySet());
+        int chunkSize = 1000;
+        for(int i = 0; i<addr.size()/ chunkSize +1; i++) {
+            List<String> sub = addr.subList(i* chunkSize, Math.min((i+1)* chunkSize, addr.size()));
+            if(sub.size()>0) {
+                existingAddresses.addAll(addressRepo.getExistingAddresses(sub));
+            }
+        }
+        return existingAddresses;
     }
 
 }
