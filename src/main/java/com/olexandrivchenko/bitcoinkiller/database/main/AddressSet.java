@@ -24,10 +24,10 @@ public class AddressSet {
         for(Address addr : addresses){
             add(addr);
         }
-        removeZeroBalances(this.addresses);
     }
 
     public Map<String, Address> getAddresses(){
+        removeZeroBalances(this.addresses);
         return addresses;
     }
 

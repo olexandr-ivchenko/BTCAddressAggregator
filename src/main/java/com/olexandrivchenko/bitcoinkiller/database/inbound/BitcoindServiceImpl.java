@@ -1,9 +1,9 @@
 package com.olexandrivchenko.bitcoinkiller.database.inbound;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.GenericResponse;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.JsonRpcRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,10 +13,14 @@ import org.springframework.http.client.support.BasicAuthorizationInterceptor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.Optional.ofNullable;
 
 @Component
 public class BitcoindServiceImpl {
+    private final static Logger log = LoggerFactory.getLogger(BitcoindServiceImpl.class);
 
 
     private String daemonUrl = "http://127.0.0.1:8332/";
@@ -47,10 +51,36 @@ public class BitcoindServiceImpl {
 
         HttpEntity<JsonRpcRequest> request = new HttpEntity<>(rq,requestHeaders);
 
-        return template.exchange(daemonUrl,
-                HttpMethod.POST,
-                request,
-                type).getBody();
+        GenericResponse<T> rs = null;
+        int attempts = 0;
+        do {
+            attempts++;
+            try {
+                rs = template.exchange(daemonUrl,
+                        HttpMethod.POST,
+                        request,
+                        type).getBody();
+            } catch (Exception e) {
+                StringBuilder paramString = new StringBuilder();
+                ofNullable(params).orElse(new ArrayList<>())
+                        .forEach(o -> paramString.append(o).append(" "));
+                log.error("Failed to execute daemon call for operation {} and param {}",
+                        operation,
+                        paramString.toString());
+                if(attempts > 2){
+                    throw e;
+                }else{
+                    try {
+                        synchronized (this) {
+                            this.wait(5000);
+                        }
+                    } catch (InterruptedException e1) {
+                        log.error("InterruptedException while waiting to retry", e1);
+                    }
+                }
+            }
+        }while(rs == null || attempts > 3);
+        return rs;
     }
 
 }
