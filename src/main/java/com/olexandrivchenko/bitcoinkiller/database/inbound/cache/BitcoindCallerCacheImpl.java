@@ -24,6 +24,9 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     private Cache txCache;
 
     private boolean enableCache = true;
+    private boolean aggressiveCacheTrim = true;
+
+    private long lastRequestedBlock = 0;
 
     private long transactionsLoaded = 0;
 
@@ -44,14 +47,35 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     @Override
     public GenericResponse<Block> getBlock(long number) {
+        lastRequestedBlock=number;
         GenericResponse<Block> block = baseImplementation.getBlock(number);
         if (enableCache) {
             for (Tx tx : block.getResult().getTx()) {
+                if(aggressiveCacheTrim){
+                    cutUnusedFields(tx);
+                }
                 txCache.put(new Element(tx.getTxid(), new CachedTx(tx)));
             }
             log.debug("Saving block {} transaction. Total {} transaction", number, block.getResult().getTx().size());
         }
         return block;
+    }
+
+    private void cutUnusedFields(Tx tx) {
+        tx.setHash(null);
+        tx.setHex(null);
+        tx.getVin().forEach(o->{
+            if(o.getScriptSig() != null) {
+                o.getScriptSig().setAsm(null);
+                o.getScriptSig().setHex(null);
+            }
+        });
+        tx.getVout().forEach(o->{
+            if(o.getScriptPubKey() != null) {
+                o.getScriptPubKey().setAsm(null);
+                o.getScriptPubKey().setHex(null);
+            }
+        });
     }
 
     @Override
@@ -78,7 +102,7 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     @Scheduled(fixedDelay = 60000)
     public void outputStats() {
         StatisticsGateway stat = txCache.getStatistics();
-        log.info("\nEhcache stats: added={}, removed={}, evicted={}, heapSize={}kb, elementCount={}, hitCount={}, missCount={}, hitRatio={}",
+        log.info("\nEhcache stats: added={}, removed={}, evicted={}, heapSize={}kb, elementCount={}, hitCount={}, missCount={}, hitRatio={}, lastBlock={}",
                 stat.cachePutAddedCount(),
                 stat.cacheRemoveCount(),
                 stat.cacheEvictedCount(),
@@ -86,7 +110,8 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
                 txCache.getSize(),
                 stat.cacheHitCount(),
                 stat.cacheMissCount(),
-                stat.cacheHitRatio());
+                stat.cacheHitRatio(),
+                lastRequestedBlock);
 //        for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
 //            if (mpBean.getType() == MemoryType.HEAP) {
 //                log.debug("Name: {}: {}", mpBean.getName(), mpBean.getUsage()

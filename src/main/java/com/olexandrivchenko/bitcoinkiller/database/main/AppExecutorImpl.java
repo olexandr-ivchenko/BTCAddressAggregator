@@ -41,11 +41,11 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
     @Override
     public void startBlockChainIndexMaintain(){
         //temporary warm up booster
-//        log.info("Goin to warm up cache");
-//        long processedBlocks = out.getLastProcessedBlockNumber();
-//        for(int i=23000;i>-100001;i--){
-//            daemon.getBlock(processedBlocks-i);
-//        }
+        log.info("Goin to warm up cache");
+        long processedBlocks = out.getLastProcessedBlockNumber();
+        for(int i=3000;i>1;i--){
+            daemon.getBlock(processedBlocks-i);
+        }
 
 //        Random rand = new Random();
 //        List<Address> duplicates = new ArrayList<>();

@@ -97,7 +97,7 @@ public class OutputGate {
     private List<Address> loadExistingAddresses(@NonNull Map<String, Address> addresses) {
         List<Address> existingAddresses = new ArrayList<>();
         List<String> addr = new ArrayList<>(addresses.keySet());
-        int chunkSize = 1000;
+        int chunkSize = 100;
         for(int i = 0; i<addr.size()/ chunkSize +1; i++) {
             List<String> sub = addr.subList(i* chunkSize, Math.min((i+1)* chunkSize, addr.size()));
             if(sub.size()>0) {
