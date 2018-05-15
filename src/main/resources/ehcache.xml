@@ -7,12 +7,12 @@
 >
 
     <cache name="txCache"
-           maxBytesLocalHeap="2G"
+           maxBytesLocalHeap="6G"
            overflowToDisk="false"
            timeToLiveSeconds="0"
            timeToIdleSeconds="0"
            memoryStoreEvictionPolicy="FIFO">
-        <sizeOfPolicy maxDepth="1000" maxDepthExceededBehavior="abort"/>
+        <sizeOfPolicy maxDepth="50000" maxDepthExceededBehavior="abort"/>
     </cache>
 
 </ehcache>
