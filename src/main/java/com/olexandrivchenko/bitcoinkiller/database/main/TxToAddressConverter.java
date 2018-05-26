@@ -28,12 +28,15 @@ public class TxToAddressConverter {
         List<Address> rs = new ArrayList<>();
         if (!isBlockReward(vin)) {
             for (Vin vinn : vin) {
-                Tx inputTransaction = daemon.loadTransaction(vinn.getTxid());
-                Vout outForThisInput = inputTransaction.getVout().get(vinn.getVout());
+//                Tx inputTransaction = daemon.loadTransaction(vinn.getTxid());
+//                Vout outForThisInput = inputTransaction.getVout().get(vinn.getVout());
+                Vout outForThisInput = daemon.getTransactionOut(vinn.getTxid(), vinn.getVout());
                 Address inputAddr = getAddress(outForThisInput, false);
                 rs.add(inputAddr);
             }
         }
+        //dirty hack to see the outcome
+        tx.setVin(null);
         for (Vout voutt : vout) {
             Address outAddr = getAddress(voutt, true);
             rs.add(outAddr);

@@ -43,7 +43,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
         //temporary warm up booster
         log.info("Goin to warm up cache");
         long processedBlocks = out.getLastProcessedBlockNumber();
-        for(int i=3000;i>1;i--){
+        for(int i=2000;i>1;i--){
             daemon.getBlock(processedBlocks-i);
         }
 

@@ -4,6 +4,7 @@ import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCaller;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.GenericResponse;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx;
+import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vout;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -13,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.text.DecimalFormat;
 
 @Service("BitcoindCallerCache")
 public class BitcoindCallerCacheImpl implements BitcoindCaller {
@@ -27,8 +30,6 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     private boolean aggressiveCacheTrim = true;
 
     private long lastRequestedBlock = 0;
-
-    private long transactionsLoaded = 0;
 
     public BitcoindCallerCacheImpl(@Qualifier("BitcoindCaller") BitcoindCaller baseImplementation,
                                    LoggingCacheListener cacheLogger) {
@@ -47,11 +48,11 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     @Override
     public GenericResponse<Block> getBlock(long number) {
-        lastRequestedBlock=number;
+        lastRequestedBlock = number;
         GenericResponse<Block> block = baseImplementation.getBlock(number);
         if (enableCache) {
             for (Tx tx : block.getResult().getTx()) {
-                if(aggressiveCacheTrim){
+                if (aggressiveCacheTrim) {
                     cutUnusedFields(tx);
                 }
                 txCache.put(new Element(tx.getTxid(), new CachedTx(tx)));
@@ -64,14 +65,14 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     private void cutUnusedFields(Tx tx) {
         tx.setHash(null);
         tx.setHex(null);
-        tx.getVin().forEach(o->{
-            if(o.getScriptSig() != null) {
+        tx.getVin().forEach(o -> {
+            if (o.getScriptSig() != null) {
                 o.getScriptSig().setAsm(null);
                 o.getScriptSig().setHex(null);
             }
         });
-        tx.getVout().forEach(o->{
-            if(o.getScriptPubKey() != null) {
+        tx.getVout().forEach(o -> {
+            if (o.getScriptPubKey() != null) {
                 o.getScriptPubKey().setAsm(null);
                 o.getScriptPubKey().setHex(null);
             }
@@ -80,23 +81,62 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     @Override
     public Tx loadTransaction(String txid) {
+        return loadTransactionInternal(txid, true);
+    }
+
+    private Tx loadTransactionInternal(String txid, boolean notifyRead) {
         if (enableCache) {
             Element cacheElement = txCache.get(txid);
             if (cacheElement != null) {
                 Object txObj = cacheElement.getObjectValue();
                 CachedTx tx = (CachedTx) txObj;
                 log.debug("Returning transaction from cache {}", txid);
-                tx.notifyRead();
+                if(notifyRead) {
+                    tx.notifyRead();
+                }
                 if (tx.getReadCount() >= tx.getOutCount()) {
                     txCache.remove(txid);
-                } else {
-                    txCache.put(new Element(txid, tx));
                 }
                 return tx.getTx();
             }
         }
-        transactionsLoaded++;
         return baseImplementation.loadTransaction(txid);
+    }
+
+    @Override
+    public Vout getTransactionOut(String txid, Integer n) {
+        Tx transaction = loadTransactionInternal(txid, false);
+        for(int i=0;i<transaction.getVout().size();i++){
+            Vout vout = transaction.getVout().get(i);
+            if (Integer.compare(vout.getN(), n) == 0) {
+                transaction.getVout().remove(i);
+                if(transaction.getVout().size() == 0){
+                    txCache.remove(txid);
+                }else{
+                    notifyCacheSizeChange(txid);
+                }
+                return vout;
+            }
+
+        }
+        throw new Error("This is bad code! " +
+                "Requested transaction " + transaction.getTxid() +
+                " input number " + n +
+                " from total left " + transaction.getVout().size());
+    }
+
+    private void notifyCacheSizeChange(String txid){
+        if (enableCache) {
+            Element cacheElement = txCache.get(txid);
+            if (cacheElement != null) {
+                txCache.put(cacheElement);
+            }
+        }
+
+    }
+
+    public StatisticsGateway getCacheStatistics(){
+        return txCache.getStatistics();
     }
 
     @Scheduled(fixedDelay = 60000)
@@ -106,11 +146,11 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
                 stat.cachePutAddedCount(),
                 stat.cacheRemoveCount(),
                 stat.cacheEvictedCount(),
-                stat.getLocalHeapSizeInBytes()/1024,
+                stat.getLocalHeapSizeInBytes() / 1024,
                 txCache.getSize(),
                 stat.cacheHitCount(),
                 stat.cacheMissCount(),
-                stat.cacheHitRatio(),
+                new DecimalFormat("###,###.00").format((double)stat.cacheHitCount()/stat.cacheMissCount()),
                 lastRequestedBlock);
 //        for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
 //            if (mpBean.getType() == MemoryType.HEAP) {

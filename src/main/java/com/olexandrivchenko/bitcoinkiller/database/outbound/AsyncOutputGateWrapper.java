@@ -26,7 +26,7 @@ public class AsyncOutputGateWrapper {
     }
 
     @NonNull
-    public synchronized DbUpdateLog getJobToProcess(int size) {
+    public DbUpdateLog getJobToProcess(int size) {
         if (updateQueue.isEmpty()) {
             return outputGate.getJobToProcess(size, true);
         }

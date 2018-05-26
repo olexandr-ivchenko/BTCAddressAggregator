@@ -16,7 +16,7 @@ public class Vout {
     @JsonProperty("value")
     private Double value;
     @JsonProperty("n")
-    private Long n;
+    private Integer n;
     @JsonProperty("scriptPubKey")
     private ScriptPubKey scriptPubKey;
 
@@ -31,12 +31,12 @@ public class Vout {
     }
 
     @JsonProperty("n")
-    public Long getN() {
+    public Integer getN() {
         return n;
     }
 
     @JsonProperty("n")
-    public void setN(Long n) {
+    public void setN(Integer n) {
         this.n = n;
     }
 

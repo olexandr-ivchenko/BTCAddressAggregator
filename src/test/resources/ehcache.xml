@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://www.ehcache.org/ehcache.xsd"
+         updateCheck="false"
+         monitoring="off"
+         dynamicConfig="false"
+>
+
+    <cache name="txCache"
+           maxBytesLocalHeap="512M"
+           overflowToDisk="false"
+           timeToLiveSeconds="0"
+           timeToIdleSeconds="0"
+           memoryStoreEvictionPolicy="FIFO">
+        <sizeOfPolicy maxDepth="100000" maxDepthExceededBehavior="abort"/>
+    </cache>
+
+</ehcache>
