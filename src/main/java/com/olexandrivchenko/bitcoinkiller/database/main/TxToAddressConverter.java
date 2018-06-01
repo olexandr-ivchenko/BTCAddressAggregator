@@ -5,6 +5,8 @@ import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vin;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vout;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +16,8 @@ import java.util.Random;
 
 @Component
 public class TxToAddressConverter {
+
+    private final static Logger log = LoggerFactory.getLogger(TxToAddressConverter.class);
 
     private final BitcoindCaller daemon;
 
@@ -28,8 +32,6 @@ public class TxToAddressConverter {
         List<Address> rs = new ArrayList<>();
         if (!isBlockReward(vin)) {
             for (Vin vinn : vin) {
-//                Tx inputTransaction = daemon.loadTransaction(vinn.getTxid());
-//                Vout outForThisInput = inputTransaction.getVout().get(vinn.getVout());
                 Vout outForThisInput = daemon.getTransactionOut(vinn.getTxid(), vinn.getVout());
                 Address inputAddr = getAddress(outForThisInput, false);
                 rs.add(inputAddr);

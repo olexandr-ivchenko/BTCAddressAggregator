@@ -1,6 +1,7 @@
 package com.olexandrivchenko.bitcoinkiller.database.main;
 
 import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCaller;
+import com.olexandrivchenko.bitcoinkiller.database.inbound.cache.BitcoindCallerCacheImpl;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.GenericResponse;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.AsyncOutputGateWrapper;
@@ -18,7 +19,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class AppExecutorImpl implements AppExecutor, Runnable{
+public class AppExecutorImpl implements AppExecutor, Runnable {
     private final static Logger log = LoggerFactory.getLogger(AppExecutorImpl.class);
 
     private final static int BLOCKS_TO_PROCESS_IN_ONE_BATCH = 1000;
@@ -39,48 +40,16 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
     }
 
     @Override
-    public void startBlockChainIndexMaintain(){
+    public void startBlockChainIndexMaintain() {
         //temporary warm up booster
         log.info("Goin to warm up cache");
         long processedBlocks = out.getLastProcessedBlockNumber();
-        for(int i=2000;i>1;i--){
-            daemon.getBlock(processedBlocks-i);
+        for (int i = 8000; i > 1; i--) {
+            GenericResponse<Block> block = daemon.getBlock(processedBlocks - i);
+            if (daemon instanceof BitcoindCallerCacheImpl) {
+                ((BitcoindCallerCacheImpl) daemon).cleanCacheFromBlockInfo(block.getResult());
+            }
         }
-
-//        Random rand = new Random();
-//        List<Address> duplicates = new ArrayList<>();
-//        long start = 0;
-//        while(true){
-//            start = System.currentTimeMillis();
-//            AddressSet set = new AddressSet();
-//            duplicates = new ArrayList<>();
-//            for(int i=0; i<100; i++){
-//                List<Address> l = new ArrayList<>();
-//                for(int j=0; j< 2000; j++) {
-//                    Address a = new Address();
-//                    a.setAmount(rand.nextInt()%2==0?0:Math.abs(rand.nextDouble()%100));
-////                    a.setAmount(rand.nextInt());
-//                    a.setAddress(UUID.randomUUID().toString().substring(0, 31));
-//                    a.setLastSeenBlock(1000000L);
-//                    a.setCreationBlock(1000000L);
-//                    l.add(a);
-//                    if(rand.nextInt()%2 == 0){
-//                        Address dup = new Address();
-//                        dup.setCreationBlock(1000000L);
-//                        dup.setLastSeenBlock(1000000L);
-//                        dup.setAddress(a.getAddress());
-//                        dup.setAmount(-a.getAmount() + Math.abs(rand.nextInt()%2));
-//                        duplicates.add(dup);
-//                    }
-//                }
-//                set.addAll(l);
-//            }
-//            DbUpdateLog dbUpdateLog = new DbUpdateLog();
-//            dbUpdateLog.setProcessed(false);
-//            dbUpdateLog.setStartBlock(1000000L);
-//            dbUpdateLog.setEndBlock(1000001L);
-//            asyncOut.postUpdateJob(set.getAddresses(), dbUpdateLog);
-//        }
 
         log.info("startBlockChainIndexMaintain");
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -89,8 +58,8 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
     }
 
     @Override
-    public void loadBlockChain(){
-        while(true) {
+    public void loadBlockChain() {
+        while (true) {
             long startTime = System.currentTimeMillis();
             //check if there is job to process
             long blockchainSize = daemon.getBlockchainSize();
@@ -100,7 +69,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
                 return;
             }
             //get next job to process
-            DbUpdateLog job = asyncOut.getJobToProcess(Math.min(BLOCKS_TO_PROCESS_IN_ONE_BATCH, (int)(blockchainSize-processedBlocks)));
+            DbUpdateLog job = asyncOut.getJobToProcess(Math.min(BLOCKS_TO_PROCESS_IN_ONE_BATCH, (int) (blockchainSize - processedBlocks)));
 
             log.info("Going to process blocks {}-{}", job.getStartBlock(), job.getEndBlock());
             AddressSet addressSet = new AddressSet();
@@ -120,7 +89,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
                     job.getStartBlock(),
                     job.getEndBlock(),
                     addressSet.getAddresses().size(),
-                    (System.currentTimeMillis()-startTime)/1000);
+                    (System.currentTimeMillis() - startTime) / 1000);
         }
     }
 
@@ -128,7 +97,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable{
     public void run() {
         try {
             loadBlockChain();
-        }catch (Throwable e){
+        } catch (Throwable e) {
             //TODO review this. Catching everything is generally bad approach
             log.error("Got exception, during blockchain sync", e);
             System.exit(1);

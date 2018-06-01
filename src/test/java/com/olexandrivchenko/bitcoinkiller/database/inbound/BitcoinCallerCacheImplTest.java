@@ -10,6 +10,8 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.olexandrivchenko.bitcoinkiller.database.TestingUtils.getBlockRs;
 import static org.junit.Assert.*;
@@ -252,6 +254,28 @@ public class BitcoinCallerCacheImplTest {
                 testingTx.getVout().size()
         );
     }
+
+    @Test
+    public void testCacheWarmUp() throws IOException {
+        BitcoindCaller baseImplementation = getBitcoindCallerMock(new Long[]{118398L,118399L,118400L,118401L,118402L}, null);
+        BitcoindCallerCacheImpl bitcoindCallerCache = new BitcoindCallerCacheImpl(baseImplementation, null);
+
+        Map<Long, Block> blocks = new HashMap<>();
+        for(long i=118398;i<=118402;i++) {
+            blocks.put(i, bitcoindCallerCache.getBlock(i).getResult());
+        }
+        long localHeapSize = bitcoindCallerCache.getCacheStatistics().getLocalHeapSize();
+        for(long i=118398;i<=118402;i++) {
+            bitcoindCallerCache.cleanCacheFromBlockInfo(blocks.get(i));
+        }
+        long cleanedLocalHeapSize = bitcoindCallerCache.getCacheStatistics().getLocalHeapSize();
+
+        assertEquals("There are 45 transactions in mentioned 5 blocks", 45, localHeapSize);
+        assertEquals("After cleaning there should be 43 transactions", 43, cleanedLocalHeapSize);
+
+        verify(baseImplementation, never()).loadTransaction(anyString());
+    }
+
 
     private BitcoindCaller getBitcoindCallerMock(Long[] blocks, String[] transactions) throws IOException {
         BitcoindCaller baseImplementation = mock(BitcoindCaller.class);

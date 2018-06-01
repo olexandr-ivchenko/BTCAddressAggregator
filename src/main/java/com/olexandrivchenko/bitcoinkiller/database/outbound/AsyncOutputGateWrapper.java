@@ -27,7 +27,7 @@ public class AsyncOutputGateWrapper {
 
     @NonNull
     public DbUpdateLog getJobToProcess(int size) {
-        if (updateQueue.isEmpty()) {
+        if (isUpdateQueueEmpty()) {
             return outputGate.getJobToProcess(size, true);
         }
         return outputGate.getJobToProcess(size, false);
@@ -53,8 +53,14 @@ public class AsyncOutputGateWrapper {
         } while (!result);
     }
 
+    private boolean isUpdateQueueEmpty(){
+        return updateQueue.isEmpty() && !isRunningUpdate;
+    }
+
+    private boolean isRunningUpdate = false;
     @Scheduled(fixedDelay = 1000)
     public synchronized void runAsyncUpdate() {
+        isRunningUpdate = true;
         try {
             Map.Entry<DbUpdateLog, Map<String, Address>> job;
             while ((job = updateQueue.poll()) != null) {
@@ -73,6 +79,8 @@ public class AsyncOutputGateWrapper {
         } catch (Throwable e) {
             log.error("Fatal exception in database update thread", e);
             System.exit(1);
+        }finally {
+            isRunningUpdate = false;
         }
     }
 

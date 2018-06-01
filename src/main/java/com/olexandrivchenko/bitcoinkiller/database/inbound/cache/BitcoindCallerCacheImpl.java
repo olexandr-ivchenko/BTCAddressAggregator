@@ -1,10 +1,7 @@
 package com.olexandrivchenko.bitcoinkiller.database.inbound.cache;
 
 import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCaller;
-import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Block;
-import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.GenericResponse;
-import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Tx;
-import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Vout;
+import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.*;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -16,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
+import java.util.List;
 
 @Service("BitcoindCallerCache")
 public class BitcoindCallerCacheImpl implements BitcoindCaller {
@@ -85,13 +83,21 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
     }
 
     private Tx loadTransactionInternal(String txid, boolean notifyRead) {
+        Tx transactionFromCache = getTransactionFromCache(txid, notifyRead);
+        if (transactionFromCache != null) {
+            return transactionFromCache;
+        }
+        return baseImplementation.loadTransaction(txid);
+    }
+
+    private Tx getTransactionFromCache(String txid, boolean notifyRead) {
         if (enableCache) {
             Element cacheElement = txCache.get(txid);
             if (cacheElement != null) {
                 Object txObj = cacheElement.getObjectValue();
                 CachedTx tx = (CachedTx) txObj;
                 log.debug("Returning transaction from cache {}", txid);
-                if(notifyRead) {
+                if (notifyRead) {
                     tx.notifyRead();
                 }
                 if (tx.getReadCount() >= tx.getOutCount()) {
@@ -100,19 +106,31 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
                 return tx.getTx();
             }
         }
-        return baseImplementation.loadTransaction(txid);
+        return null;
     }
 
     @Override
     public Vout getTransactionOut(String txid, Integer n) {
-        Tx transaction = loadTransactionInternal(txid, false);
-        for(int i=0;i<transaction.getVout().size();i++){
+        return getTransactionOut(txid, n, true);
+    }
+
+    private Vout getTransactionOut(String txid, Integer n, boolean loadTransactionFromBlockchain) {
+        Tx transaction;
+        if (loadTransactionFromBlockchain) {
+            transaction = loadTransactionInternal(txid, false);
+        } else {
+            transaction = getTransactionFromCache(txid, false);
+            if (transaction == null) {
+                return null;
+            }
+        }
+        for (int i = 0; i < transaction.getVout().size(); i++) {
             Vout vout = transaction.getVout().get(i);
             if (Integer.compare(vout.getN(), n) == 0) {
                 transaction.getVout().remove(i);
-                if(transaction.getVout().size() == 0){
+                if (transaction.getVout().size() == 0) {
                     txCache.remove(txid);
-                }else{
+                } else {
                     notifyCacheSizeChange(txid);
                 }
                 return vout;
@@ -125,7 +143,29 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
                 " from total left " + transaction.getVout().size());
     }
 
-    private void notifyCacheSizeChange(String txid){
+    public void cleanCacheFromBlockInfo(Block block) {
+
+        for (Tx tx : block.getTx()) {
+            List<Vin> vin = tx.getVin();
+            tx.setVin(null);
+            if (!isBlockReward(vin)) {
+                for (Vin vinn : vin) {
+                    getTransactionOut(vinn.getTxid(), vinn.getVout(), false);
+                }
+
+            }
+        }
+    }
+
+    private boolean isBlockReward(List<Vin> vin) {
+        return vin.size() == 1
+                && vin.get(0).getCoinbase() != null
+                && vin.get(0).getTxid() == null
+                && vin.get(0).getScriptSig() == null;
+    }
+
+
+    private void notifyCacheSizeChange(String txid) {
         if (enableCache) {
             Element cacheElement = txCache.get(txid);
             if (cacheElement != null) {
@@ -135,30 +175,57 @@ public class BitcoindCallerCacheImpl implements BitcoindCaller {
 
     }
 
-    public StatisticsGateway getCacheStatistics(){
+    public StatisticsGateway getCacheStatistics() {
         return txCache.getStatistics();
     }
+
+    private long lastAdded = 0;
+    private long lastRemoved = 0;
+    private long lastEvicted = 0;
+    private long lastHeapSize = 0;
+    private long lastElementCount = 0;
+    private long lastHitCount = 0;
+    private long lastMissCount = 0;
+    private long lastProcessedBlock = 0;
 
     @Scheduled(fixedDelay = 60000)
     public void outputStats() {
         StatisticsGateway stat = txCache.getStatistics();
-        log.info("\nEhcache stats: added={}, removed={}, evicted={}, heapSize={}kb, elementCount={}, hitCount={}, missCount={}, hitRatio={}, lastBlock={}",
-                stat.cachePutAddedCount(),
-                stat.cacheRemoveCount(),
-                stat.cacheEvictedCount(),
-                stat.getLocalHeapSizeInBytes() / 1024,
-                txCache.getSize(),
-                stat.cacheHitCount(),
-                stat.cacheMissCount(),
-                new DecimalFormat("###,###.00").format((double)stat.cacheHitCount()/stat.cacheMissCount()),
-                lastRequestedBlock);
-//        for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
-//            if (mpBean.getType() == MemoryType.HEAP) {
-//                log.debug("Name: {}: {}", mpBean.getName(), mpBean.getUsage()
-//                );
-//            }
-//        }
-
+        long cachePutAddedCount = stat.cachePutAddedCount();
+        long cacheRemoveCount = stat.cacheRemoveCount();
+        long cacheEvictedCount = stat.cacheEvictedCount();
+        long localHeapSizeInBytes = stat.getLocalHeapSizeInBytes();
+        int size = txCache.getSize();
+        long cacheHitCount = stat.cacheHitCount();
+        long cacheMissCount = stat.cacheMissCount();
+        log.info("\nEhcache stats: added={}, removed={}, evicted={}, heapSize={}kb, elementCount={}, hitCount={}, missCount={}, hitRatio={}, lastBlock={}" +
+                        "\nLast stats: added={}, removed={}, evicted={}, heapSize={}kb, elementCount={}, hitCount={}, missCount={}, hitRatio={}, processedBlocks={}",
+                cachePutAddedCount,
+                cacheRemoveCount,
+                cacheEvictedCount,
+                localHeapSizeInBytes / 1024,
+                size,
+                cacheHitCount,
+                cacheMissCount,
+                new DecimalFormat("###,###.00").format((double) cacheHitCount / (cacheMissCount + 1)),
+                lastRequestedBlock,
+                cachePutAddedCount - lastAdded,
+                cacheRemoveCount - lastRemoved,
+                cacheEvictedCount - lastEvicted,
+                (localHeapSizeInBytes - lastHeapSize) / 1024,
+                size - lastElementCount,
+                cacheHitCount - lastHitCount,
+                cacheMissCount - lastMissCount,
+                new DecimalFormat("###,###.00").format((double) (cacheHitCount - lastHitCount) / (cacheMissCount - lastMissCount + 1)),
+                lastRequestedBlock - lastProcessedBlock);
+        lastAdded = cachePutAddedCount;
+        lastRemoved = cacheRemoveCount;
+        lastEvicted = cacheEvictedCount;
+        lastHeapSize = localHeapSizeInBytes;
+        lastElementCount = size;
+        lastHitCount = cacheHitCount;
+        lastMissCount = cacheMissCount;
+        lastProcessedBlock = lastRequestedBlock;
     }
 
 }

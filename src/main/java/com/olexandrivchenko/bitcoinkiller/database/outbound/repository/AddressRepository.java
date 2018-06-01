@@ -17,6 +17,6 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
     List<Address> getExistingAddresses(@Param("addresses") Collection<String> addresses);
 
     @Modifying
-    @Query("delete from Address a where a.amount>-0.00000001 and a.amount<0.00000001")
+    @Query("delete from Address a where a.amount>=-0.00000001 and a.amount<=0.00000001")
     int wipeZeroBalance();
 }
