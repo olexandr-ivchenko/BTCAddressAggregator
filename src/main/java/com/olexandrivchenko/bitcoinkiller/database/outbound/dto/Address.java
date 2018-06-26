@@ -1,8 +1,5 @@
 package com.olexandrivchenko.bitcoinkiller.database.outbound.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import javax.persistence.*;
 
 @Entity
@@ -14,7 +11,7 @@ public class Address {
     @Id
     private Long id;
 
-    @Column(length = 34,nullable = false, updatable = false)
+    @Column(length = 90,nullable = false, updatable = false)
     private String address;
     private double amount;
     private long lastSeenBlock;
