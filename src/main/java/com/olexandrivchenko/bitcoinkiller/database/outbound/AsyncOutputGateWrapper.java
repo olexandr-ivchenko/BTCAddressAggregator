@@ -33,6 +33,13 @@ public class AsyncOutputGateWrapper {
         return outputGate.getJobToProcess(size, false);
     }
 
+    public long getNewJobStartPoint() {
+        if (isUpdateQueueEmpty()) {
+            return outputGate.getNewJobStartPoint(true);
+        }
+        return outputGate.getNewJobStartPoint(false);
+    }
+
     public void postUpdateJob(Map<String, Address> addresses, DbUpdateLog job) {
         boolean result = false;
         do {
@@ -53,11 +60,12 @@ public class AsyncOutputGateWrapper {
         } while (!result);
     }
 
-    private boolean isUpdateQueueEmpty(){
+    private boolean isUpdateQueueEmpty() {
         return updateQueue.isEmpty() && !isRunningUpdate;
     }
 
     private boolean isRunningUpdate = false;
+
     @Scheduled(fixedDelay = 1000)
     public synchronized void runAsyncUpdate() {
         isRunningUpdate = true;
@@ -79,7 +87,7 @@ public class AsyncOutputGateWrapper {
         } catch (Throwable e) {
             log.error("Fatal exception in database update thread", e);
             System.exit(1);
-        }finally {
+        } finally {
             isRunningUpdate = false;
         }
     }

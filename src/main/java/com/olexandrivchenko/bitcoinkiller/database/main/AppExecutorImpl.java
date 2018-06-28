@@ -5,7 +5,6 @@ import com.olexandrivchenko.bitcoinkiller.database.inbound.cache.BitcoindCallerC
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.GenericResponse;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.AsyncOutputGateWrapper;
-import com.olexandrivchenko.bitcoinkiller.database.outbound.OutputGate;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.DbUpdateLog;
 import org.slf4j.Logger;
@@ -22,39 +21,46 @@ import java.util.concurrent.TimeUnit;
 public class AppExecutorImpl implements AppExecutor, Runnable {
     private final static Logger log = LoggerFactory.getLogger(AppExecutorImpl.class);
 
-    private final static int BLOCKS_TO_PROCESS_IN_ONE_BATCH = 1000;
+    private final static int BLOCKS_TO_PROCESS_IN_ONE_BATCH = 10;
 
     private BitcoindCaller daemon;
     private BlockToAddressConverter blockConverter;
-    private OutputGate out;
     private AsyncOutputGateWrapper asyncOut;
 
     public AppExecutorImpl(@Qualifier("BitcoindCallerCache") BitcoindCaller daemon,
                            BlockToAddressConverter blockConverter,
-                           OutputGate out,
                            AsyncOutputGateWrapper asyncOut) {
         this.daemon = daemon;
         this.blockConverter = blockConverter;
-        this.out = out;
         this.asyncOut = asyncOut;
     }
 
     @Override
     public void startBlockChainIndexMaintain() {
-        //temporary warm up booster
-        log.info("Goin to warm up cache");
-        long processedBlocks = out.getLastProcessedBlockNumber();
-        for (int i = 8000; i > 1; i--) {
-            GenericResponse<Block> block = daemon.getBlock(processedBlocks - i);
-            if (daemon instanceof BitcoindCallerCacheImpl) {
-                ((BitcoindCallerCacheImpl) daemon).cleanCacheFromBlockInfo(block.getResult());
-            }
-        }
+        warmUpCache();
 
         log.info("startBlockChainIndexMaintain");
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleWithFixedDelay(this, 0, 1, TimeUnit.MINUTES);
 
+    }
+
+    private void warmUpCache() {
+        log.info("Goin to warm up cache");
+        long blockchainSize = daemon.getBlockchainSize();
+        long lastBlockToWarmUp = asyncOut.getNewJobStartPoint()-1;
+        int blocksToWarmUp = Math.min(5000, (int)(blockchainSize-lastBlockToWarmUp)/2);
+        blocksToWarmUp = Math.max(blocksToWarmUp, 200);
+        log.info("Blocks to warm up {}-{}, total {}",
+                lastBlockToWarmUp-blocksToWarmUp,
+                lastBlockToWarmUp,
+                blocksToWarmUp);
+        for (int i = blocksToWarmUp; i > 1; i--) {
+            GenericResponse<Block> block = daemon.getBlock(lastBlockToWarmUp - i);
+            if (daemon instanceof BitcoindCallerCacheImpl) {
+                ((BitcoindCallerCacheImpl) daemon).cleanCacheFromBlockInfo(block.getResult());
+            }
+        }
     }
 
     @Override
@@ -63,7 +69,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable {
             long startTime = System.currentTimeMillis();
             //check if there is job to process
             long blockchainSize = daemon.getBlockchainSize();
-            long processedBlocks = out.getLastProcessedBlockNumber();
+            long processedBlocks = asyncOut.getNewJobStartPoint();
             if (processedBlocks >= blockchainSize) {
                 log.info("BlockChain is up to date - going to sleep");
                 return;

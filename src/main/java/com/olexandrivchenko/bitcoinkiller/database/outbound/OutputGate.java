@@ -62,13 +62,19 @@ public class OutputGate {
         return newJob;
     }
 
-    public long getLastProcessedBlockNumber() {
-        DbUpdateLog unfinished = dbUpdateLogRepository.findFirstByProcessedFalseOrderByStartBlockAsc();
-        if (unfinished != null) {
-            return unfinished.getStartBlock() - 1;
+    public long getNewJobStartPoint(boolean skipUnfinished) {
+        if (skipUnfinished) {
+            DbUpdateLog unfinished = dbUpdateLogRepository.findFirstByProcessedFalseOrderByStartBlockAsc();
+            if (unfinished != null) {
+                return unfinished.getStartBlock();
+            }
         }
         DbUpdateLog lastLog = dbUpdateLogRepository.findFirstByOrderByEndBlockDesc();
-        return lastLog == null ? 0 : lastLog.getEndBlock();
+        if (lastLog == null) {
+            return 0L;
+        } else {
+            return lastLog.getEndBlock() + 1;
+        }
     }
 
     @Transactional
@@ -97,10 +103,10 @@ public class OutputGate {
     private List<Address> loadExistingAddresses(@NonNull Map<String, Address> addresses) {
         List<Address> existingAddresses = new ArrayList<>();
         List<String> addr = new ArrayList<>(addresses.keySet());
-        int chunkSize = 100;
-        for(int i = 0; i<addr.size()/ chunkSize +1; i++) {
-            List<String> sub = addr.subList(i* chunkSize, Math.min((i+1)* chunkSize, addr.size()));
-            if(sub.size()>0) {
+        int chunkSize = 200;
+        for (int i = 0; i < addr.size() / chunkSize + 1; i++) {
+            List<String> sub = addr.subList(i * chunkSize, Math.min((i + 1) * chunkSize, addr.size()));
+            if (sub.size() > 0) {
                 existingAddresses.addAll(addressRepo.getExistingAddresses(sub));
             }
         }
