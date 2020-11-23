@@ -17,6 +17,8 @@ public class ParametersParser {
                 return CommandLineOperation.HELP;
             }else if(params.contains("--test")){
                 return CommandLineOperation.TEST;
+            }else if(params.contains("--export")){
+                return CommandLineOperation.EXPORT;
             }
         }
         return CommandLineOperation.HELP;
