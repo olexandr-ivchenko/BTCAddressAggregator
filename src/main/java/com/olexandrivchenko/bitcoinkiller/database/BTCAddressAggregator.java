@@ -22,8 +22,8 @@ import java.util.function.Consumer;
 
 @SpringBootApplication
 @EnableScheduling
-public class BTCKillerDatabaseApp implements CommandLineRunner {
-    private final static Logger log = LoggerFactory.getLogger(BTCKillerDatabaseApp.class);
+public class BTCAddressAggregator implements CommandLineRunner {
+    private final static Logger log = LoggerFactory.getLogger(BTCAddressAggregator.class);
 
     private final ParametersParser paramParser;
     private final HelpProvider helpProvider;
@@ -33,7 +33,7 @@ public class BTCKillerDatabaseApp implements CommandLineRunner {
 
     private Map<CommandLineOperation, Consumer> actionMap;
 
-    public BTCKillerDatabaseApp(ParametersParser paramParser,
+    public BTCAddressAggregator(ParametersParser paramParser,
                                 HelpProvider helpProvider,
                                 @Qualifier("BitcoindCallerCache") BitcoindCaller daemonImpl,
                                 AppExecutor appExecutor,
@@ -46,7 +46,7 @@ public class BTCKillerDatabaseApp implements CommandLineRunner {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(BTCKillerDatabaseApp.class, args);
+        SpringApplication.run(BTCAddressAggregator.class, args);
     }
 
     @PostConstruct

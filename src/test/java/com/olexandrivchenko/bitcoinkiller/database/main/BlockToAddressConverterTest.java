@@ -45,7 +45,7 @@ public class BlockToAddressConverterTest {
     BlockToAddressConverter converter;
 
     /**
-     * Please refer to https://github.com/olexandr-ivchenko/btcKillerDatabase/issues/3
+     * Please refer to https://github.com/olexandr-ivchenko/BTCAddressAggregator/issues/3
      * block height 118398
      * transactionId 9056cc7c2181dbd1d2ec6bd92b3d7628f1811b898b009895edfd587e6c5c0cb3
      * Dumped to file 118398_9056cc7c2181dbd1d2ec6bd92b3d7628f1811b898b009895edfd587e6c5c0cb3.json

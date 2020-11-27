@@ -44,7 +44,7 @@ public class OutputGateTest {
 
     /**
      * Test for issue #3
-     * See https://github.com/olexandr-ivchenko/btcKillerDatabase/issues/3
+     * See https://github.com/olexandr-ivchenko/BTCAddressAggregator/issues/3
      */
     @Test
     public void testSkipLastUnfinishedJob(){
