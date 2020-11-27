@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <jackson.version>2.9.5</jackson.version>
+        <jackson.version>2.11.3</jackson.version>
         <spring.version>5.3.1</spring.version>
     </properties>
 
