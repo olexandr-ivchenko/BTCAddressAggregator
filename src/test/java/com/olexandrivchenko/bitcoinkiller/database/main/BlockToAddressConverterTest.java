@@ -1,16 +1,20 @@
 package com.olexandrivchenko.bitcoinkiller.database.main;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCallerImpl;
+import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindCaller;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.BitcoindServiceImpl;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.cache.BitcoindCallerCacheImpl;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.cache.LoggingCacheListener;
 import com.olexandrivchenko.bitcoinkiller.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.bitcoinkiller.database.outbound.dto.Address;
+import com.olexandrivchenko.bitcoinkiller.database.tools.BitcoinCallerFileSystemMock;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -23,8 +27,19 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = {BlockToAddressConverter.class, BitcoindServiceImpl.class, BitcoindCallerCacheImpl.class,
-        BitcoindCallerImpl.class, TxToAddressConverter.class, LoggingCacheListener.class})
+        BlockToAddressConverterTest.TestConfig.class, TxToAddressConverter.class, LoggingCacheListener.class} )
 public class BlockToAddressConverterTest {
+
+
+    @Configuration
+    public static class TestConfig {
+        @Bean
+        @Qualifier("BitcoindCaller")
+        public BitcoindCaller getBitcoinCaller(){
+            return new BitcoinCallerFileSystemMock();
+        }
+    }
+
 
     @Autowired
     BlockToAddressConverter converter;

@@ -7,7 +7,7 @@
 >
 
     <cache name="txCache"
-           maxBytesLocalHeap="1G"
+           maxBytesLocalHeap="10M"
            overflowToDisk="false"
            timeToLiveSeconds="0"
            timeToIdleSeconds="0"

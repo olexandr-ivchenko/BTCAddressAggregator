@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.olexandrivchenko.bitcoinkiller.database.TestingUtils.getBlockRs;
+import static com.olexandrivchenko.bitcoinkiller.database.tools.TestingUtils.getBlockRs;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

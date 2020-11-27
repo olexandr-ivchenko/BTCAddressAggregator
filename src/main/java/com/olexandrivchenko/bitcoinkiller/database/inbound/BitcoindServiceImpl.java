@@ -79,7 +79,7 @@ public class BitcoindServiceImpl {
                     }
                 }
             }
-        }while(rs == null || attempts > 3);
+        }while(rs == null && attempts <= 3);
         return rs;
     }
 
