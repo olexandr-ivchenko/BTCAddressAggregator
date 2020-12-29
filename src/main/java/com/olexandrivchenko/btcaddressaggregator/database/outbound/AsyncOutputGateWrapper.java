@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class AsyncOutputGateWrapper {
     private final static Logger log = LoggerFactory.getLogger(AsyncOutputGateWrapper.class);
 
-    private BlockingQueue<Map.Entry<DbUpdateLog, Map<String, Address>>> updateQueue = new ArrayBlockingQueue<>(2);
+    private BlockingQueue<Map.Entry<DbUpdateLog, Map<String, Address>>> updateQueue = new ArrayBlockingQueue<>(5);
     private OutputGate outputGate;
 
     public AsyncOutputGateWrapper(OutputGate outputGate) {
@@ -55,7 +55,7 @@ public class AsyncOutputGateWrapper {
                             end - start);
                 }
             } catch (InterruptedException e) {
-                log.error("Strange exception, while waiting to add job to queue");
+                log.error("Strange exception, while waiting to add job to queue", e);
             }
         } while (!result);
     }
@@ -67,9 +67,15 @@ public class AsyncOutputGateWrapper {
     private boolean isRunningUpdate = false;
 
     @Scheduled(fixedDelay = 1000)
-    public synchronized void runAsyncUpdate() {
-        isRunningUpdate = true;
+    public void runAsyncUpdate() {
+        synchronized (this) {
+            if (isRunningUpdate) {
+                return;
+            }
+            isRunningUpdate = true;
+        }
         try {
+            mergeJobsInQueue();
             Map.Entry<DbUpdateLog, Map<String, Address>> job;
             while ((job = updateQueue.poll()) != null) {
                 long start = System.currentTimeMillis();
@@ -91,5 +97,10 @@ public class AsyncOutputGateWrapper {
             isRunningUpdate = false;
         }
     }
+
+    private void mergeJobsInQueue() {
+        //TODO merge jobs that are in queue
+    }
+
 
 }
