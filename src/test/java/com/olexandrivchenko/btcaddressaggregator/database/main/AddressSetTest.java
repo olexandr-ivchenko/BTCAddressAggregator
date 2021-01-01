@@ -1,13 +1,13 @@
 package com.olexandrivchenko.btcaddressaggregator.database.main;
 
 import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.Address;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AddressSetTest {
 
@@ -15,7 +15,7 @@ public class AddressSetTest {
     public void testSingleAdd(){
         AddressSet set = new AddressSet();
         set.addAll(generateAddressList(null, null, 0));
-        assertEquals("Added single record - expecting single entry", 1, set.getAddresses().size());
+        assertEquals(1, set.getAddresses().size(), "Added single record - expecting single entry");
     }
 
     @Test
@@ -24,7 +24,7 @@ public class AddressSetTest {
         set.addAll(generateAddressList(null, null, 0));
         set.addAll(generateAddressList(null, null, 0));
         set.addAll(generateAddressList(null, null, 0));
-        assertEquals("Added 3 records - expecting 3", 3, set.getAddresses().size());
+        assertEquals(3, set.getAddresses().size(), "Added 3 records - expecting 3");
     }
 
     @Test
@@ -33,9 +33,9 @@ public class AddressSetTest {
         set.addAll(generateAddressList("xxxyyyzzz", 50d, 10));
         set.addAll(generateAddressList("xxxyyyzzz", -10d, 50));
         set.addAll(generateAddressList("xxxyyyzzz", -20d, 80));
-        assertEquals("same address 3 times - should give one result", 1, set.getAddresses().size());
-        assertEquals("One block minus 2 transactions", 20d, set.getAddresses().get("xxxyyyzzz").getAmount(), 0.000000001);
-        assertEquals("last changed on block 80", 80, set.getAddresses().get("xxxyyyzzz").getLastSeenBlock());
+        assertEquals(1, set.getAddresses().size(), "same address 3 times - should give one result");
+        assertEquals(20d, set.getAddresses().get("xxxyyyzzz").getAmount(), 0.000000001, "One block minus 2 transactions");
+        assertEquals(80, set.getAddresses().get("xxxyyyzzz").getLastSeenBlock(), "last changed on block 80");
     }
 
     public void testRemoveZeroBalances(){
@@ -43,7 +43,7 @@ public class AddressSetTest {
         set.addAll(generateAddressList(null, 0d, 10));
         set.addAll(generateAddressList(null, 0d, 15));
         set.addAll(generateAddressList(null, 0d, 18));
-        assertEquals("Empty addresses should be removed", 0, set.getAddresses().size());
+        assertEquals(0, set.getAddresses().size(), "Empty addresses should be removed");
 
     }
 

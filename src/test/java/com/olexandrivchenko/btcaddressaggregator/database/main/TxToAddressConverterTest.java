@@ -9,21 +9,22 @@ import com.olexandrivchenko.btcaddressaggregator.database.inbound.jsonrpc.Tx;
 import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.Address;
 import com.olexandrivchenko.btcaddressaggregator.database.tools.BitcoinCallerFileSystemMock;
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
+
+@ExtendWith(MockitoExtension.class)
 @ContextConfiguration(classes = {BitcoindServiceImpl.class, BitcoindCallerCacheImpl.class, TxToAddressConverterTest.TestConfig.class,
         TxToAddressConverter.class, LoggingCacheListener.class})
 public class TxToAddressConverterTest {

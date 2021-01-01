@@ -83,7 +83,7 @@ public class OutputGate {
         mergeExistingIntoUpdate(addressesMap, existing);
         job.setProcessed(true);
         if (!addressesMap.isEmpty()) {
-            addressRepo.save(addressesMap.values());
+            addressRepo.saveAll(addressesMap.values());
 //            addressRepo.flush();
         }
         dbUpdateLogRepository.save(job);
