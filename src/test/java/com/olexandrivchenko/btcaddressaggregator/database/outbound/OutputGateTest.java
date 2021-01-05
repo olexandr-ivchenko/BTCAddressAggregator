@@ -1,21 +1,21 @@
 package com.olexandrivchenko.btcaddressaggregator.database.outbound;
 
 import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.DbUpdateLog;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
+
 @DataJpaTest
 @ContextConfiguration(classes = {OutputGate.class})
+@EnableAutoConfiguration
 public class OutputGateTest {
 
     @Autowired
@@ -30,7 +30,7 @@ public class OutputGateTest {
         assertEquals(Long.valueOf(0L), jobToProcess.getStartBlock());
         assertEquals(Long.valueOf(99L), jobToProcess.getEndBlock());
         DbUpdateLog dbUpdateLog = entityManager.find(DbUpdateLog.class, jobToProcess.getId());
-        assertEquals(false, dbUpdateLog.isProcessed());
+        assertFalse(dbUpdateLog.isProcessed());
     }
 
     @Test
@@ -39,7 +39,7 @@ public class OutputGateTest {
         jobToProcess.setProcessed(true);
         out.runUpdate(new HashMap<>(), jobToProcess);
         DbUpdateLog dbUpdateLog = entityManager.find(DbUpdateLog.class, jobToProcess.getId());
-        assertEquals(true, dbUpdateLog.isProcessed());
+        assertTrue(dbUpdateLog.isProcessed());
     }
 
     /**

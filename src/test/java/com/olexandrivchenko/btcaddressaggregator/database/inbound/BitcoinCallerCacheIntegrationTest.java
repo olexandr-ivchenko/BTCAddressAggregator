@@ -6,18 +6,18 @@ import com.olexandrivchenko.btcaddressaggregator.database.inbound.cache.Bitcoind
 import com.olexandrivchenko.btcaddressaggregator.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.btcaddressaggregator.database.inbound.jsonrpc.GenericResponse;
 import com.olexandrivchenko.btcaddressaggregator.database.main.AddressSet;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(MockitoExtension.class)
 //@ContextConfiguration(classes = {BitcoindCallerCacheImpl.class, BitcoindCallerImpl.class, BitcoindServiceImpl.class,
 //        LoggingCacheListener.class})
 @SpringBootTest
@@ -29,7 +29,7 @@ public class BitcoinCallerCacheIntegrationTest {
     private BitcoindCallerCacheImpl daemon;
 
     @Test
-    @Ignore
+    @Disabled
     public void testDuplicateVoutRead() {
         long startBlock = 450471;
         long endBlock = 451001;
@@ -40,12 +40,12 @@ public class BitcoinCallerCacheIntegrationTest {
             daemon.cleanCacheFromBlockInfo(block.getResult());
 
         }
-        assertEquals("Cache should not evict during test", 0, daemon.getCacheStatistics().cacheEvictedCount());
+        assertEquals(0, daemon.getCacheStatistics().cacheEvictedCount(), "Cache should not evict during test");
 
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void loadBlockAndLog() throws JsonProcessingException {
         GenericResponse<Block> block = daemon.getBlock(481800);
         ObjectMapper mapper = new ObjectMapper();

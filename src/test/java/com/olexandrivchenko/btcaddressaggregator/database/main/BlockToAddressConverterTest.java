@@ -9,23 +9,26 @@ import com.olexandrivchenko.btcaddressaggregator.database.inbound.jsonrpc.Block;
 import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.Address;
 import com.olexandrivchenko.btcaddressaggregator.database.tools.BitcoinCallerFileSystemMock;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
+
+@ExtendWith(MockitoExtension.class)
+@SpringBootTest
 @ContextConfiguration(classes = {BlockToAddressConverter.class, BitcoindServiceImpl.class, BitcoindCallerCacheImpl.class,
         BlockToAddressConverterTest.TestConfig.class, TxToAddressConverter.class, LoggingCacheListener.class} )
 public class BlockToAddressConverterTest {
@@ -59,17 +62,17 @@ public class BlockToAddressConverterTest {
         Block block = mapper.readValue(jsonBody, Block.class);
         List<Address> result = converter.convert(block);
 
-        Assert.assertEquals(110, result.size());
+        assertEquals(110, result.size());
         double sum = 0;
         for (Address addr : result) {
             sum += addr.getAmount();
         }
-        Assert.assertEquals(50, sum, 0.000000001);
+        assertEquals(50, sum, 0.000000001);
         Set<Address> expectedAddr = result.stream()
                 .filter(o -> o.getAddress().equals("184wu9LYeh8q73i9CHWNA8GR5CDZUMQeSw"))
                 .collect(Collectors.toSet());
-        Assert.assertEquals(1, expectedAddr.size());
-        Assert.assertEquals("184wu9LYeh8q73i9CHWNA8GR5CDZUMQeSw", expectedAddr.stream().findFirst().map(Address::getAddress).orElse(null));
+        assertEquals(1, expectedAddr.size());
+        assertEquals("184wu9LYeh8q73i9CHWNA8GR5CDZUMQeSw", expectedAddr.stream().findFirst().map(Address::getAddress).orElse(null));
     }
 
 
