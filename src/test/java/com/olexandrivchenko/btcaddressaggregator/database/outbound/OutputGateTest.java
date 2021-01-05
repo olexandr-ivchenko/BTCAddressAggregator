@@ -2,9 +2,8 @@ package com.olexandrivchenko.btcaddressaggregator.database.outbound;
 
 import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.DbUpdateLog;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ContextConfiguration;
@@ -14,9 +13,9 @@ import java.util.HashMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-@ExtendWith(MockitoExtension.class)
 @DataJpaTest
 @ContextConfiguration(classes = {OutputGate.class})
+@EnableAutoConfiguration
 public class OutputGateTest {
 
     @Autowired

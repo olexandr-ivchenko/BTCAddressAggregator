@@ -7,7 +7,6 @@ import com.olexandrivchenko.btcaddressaggregator.database.inbound.jsonrpc.Tx;
 import com.olexandrivchenko.btcaddressaggregator.database.inbound.jsonrpc.Vout;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -64,7 +63,6 @@ public class BitcoinCallerCacheImplTest {
     public void testLoadVout() throws IOException {
         BitcoindCaller baseImplementation = getBitcoindCallerMock(new Long[]{118398L}, null);
         BitcoindCallerCacheImpl bitcoindCallerCache = new BitcoindCallerCacheImpl(baseImplementation, null);
-        Mockito.when(baseImplementation.loadTransaction(anyString())).thenReturn(null);
 
         bitcoindCallerCache.getBlock(118398);
         Vout vout = bitcoindCallerCache.getTransactionOut("463866355098cf2b3362812dfe6b236bdaf96d07af3f8deeb083a131dbe2e033", 0);
@@ -82,7 +80,6 @@ public class BitcoinCallerCacheImplTest {
     public void testLoadVoutTruncation() throws IOException {
         BitcoindCaller baseImplementation = getBitcoindCallerMock(new Long[]{118398L}, null);
         BitcoindCallerCacheImpl bitcoindCallerCache = new BitcoindCallerCacheImpl(baseImplementation, null);
-        Mockito.when(baseImplementation.loadTransaction(anyString())).thenReturn(null);
 
         GenericResponse<Block> blockRs = bitcoindCallerCache.getBlock(118398);
 
@@ -182,7 +179,6 @@ public class BitcoinCallerCacheImplTest {
     public void testDoubleLoadVoutThrowsError() throws IOException {
         BitcoindCaller baseImplementation = getBitcoindCallerMock(new Long[]{118398L}, null);
         BitcoindCallerCacheImpl bitcoindCallerCache = new BitcoindCallerCacheImpl(baseImplementation, null);
-        Mockito.when(baseImplementation.loadTransaction(anyString())).thenReturn(null);
 
         GenericResponse<Block> blockRs = bitcoindCallerCache.getBlock(118398);
 
@@ -227,7 +223,6 @@ public class BitcoinCallerCacheImplTest {
     public void testLoadVoutReducesCacheSize() throws IOException {
         BitcoindCaller baseImplementation = getBitcoindCallerMock(new Long[]{428097L}, null);
         BitcoindCallerCacheImpl bitcoindCallerCache = new BitcoindCallerCacheImpl(baseImplementation, null);
-        Mockito.when(baseImplementation.loadTransaction(anyString())).thenReturn(null);
 
         GenericResponse<Block> blockRs = bitcoindCallerCache.getBlock(428097);
 
@@ -281,11 +276,6 @@ public class BitcoinCallerCacheImplTest {
                 GenericResponse<Block> blockRs = getBlockRs(blockNum);
                 Mockito.when(baseImplementation.getBlock(blockNum)).thenReturn(blockRs);
             }
-        } else {
-            Mockito.when(baseImplementation.getBlock(Matchers.anyLong())).thenReturn(null);
-        }
-        if (transactions == null || transactions.length == 0) {
-            Mockito.when(baseImplementation.loadTransaction(anyString())).thenReturn(null);
         }
         return baseImplementation;
     }
