@@ -1,6 +1,7 @@
 package com.olexandrivchenko.btcaddressaggregator.database.outbound;
 
 import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.DbUpdateLog;
+import com.olexandrivchenko.btcaddressaggregator.database.outbound.impl.DatabaseOutputGateImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -14,9 +15,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @DataJpaTest
-@ContextConfiguration(classes = {OutputGate.class})
+@ContextConfiguration(classes = {DatabaseOutputGateImpl.class})
 @EnableAutoConfiguration
-public class OutputGateTest {
+public class DatabaseOutputGateTest {
 
     @Autowired
     OutputGate out;

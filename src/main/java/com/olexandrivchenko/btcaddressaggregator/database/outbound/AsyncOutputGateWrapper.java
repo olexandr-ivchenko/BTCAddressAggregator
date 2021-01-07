@@ -4,6 +4,7 @@ import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.Address;
 import com.olexandrivchenko.btcaddressaggregator.database.outbound.dto.DbUpdateLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class AsyncOutputGateWrapper {
     private BlockingQueue<Map.Entry<DbUpdateLog, Map<String, Address>>> updateQueue = new ArrayBlockingQueue<>(5);
     private OutputGate outputGate;
 
-    public AsyncOutputGateWrapper(OutputGate outputGate) {
+    public AsyncOutputGateWrapper(@Qualifier("FileSystemOutputGateImpl") OutputGate outputGate) {
         this.outputGate = outputGate;
     }
 

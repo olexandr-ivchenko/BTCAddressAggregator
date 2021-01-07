@@ -51,6 +51,7 @@ public class AppExecutorImpl implements AppExecutor, Runnable {
         long lastBlockToWarmUp = asyncOut.getNewJobStartPoint()-1;
         int blocksToWarmUp = Math.min(20000, (int)(blockchainSize-lastBlockToWarmUp)/2);
         blocksToWarmUp = Math.max(blocksToWarmUp, 200);
+        blocksToWarmUp = Math.min(blocksToWarmUp, (int)lastBlockToWarmUp); //you can't warm up more than already loaded
         log.info("Blocks to warm up {}-{}, total {}",
                 lastBlockToWarmUp-blocksToWarmUp,
                 lastBlockToWarmUp,
